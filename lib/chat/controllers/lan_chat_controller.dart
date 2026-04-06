@@ -30,6 +30,9 @@ class LanChatController extends ChangeNotifier {
   String? localUserId;
   String? status;
   String? hostAddress;
+  bool _hostHidden = false;
+  RoomSecurityType _hostSecurityType = RoomSecurityType.none;
+  String? _hostSecurityValue;
 
   RawDatagramSocket? _discoveryListener;
   ServerSocket? _serverSocket;
@@ -45,9 +48,40 @@ class LanChatController extends ChangeNotifier {
     return rooms;
   }
 
+  List<RoomInfo> get visibleRooms {
+    return discoveredRooms.where((RoomInfo room) => !room.hidden).toList();
+  }
+
   void setStatus(String value) {
     status = value;
     _notify();
+  }
+
+  bool isRoomNameTaken(String name) {
+    final String candidate = name.trim().toLowerCase();
+    if (candidate.isEmpty) {
+      return false;
+    }
+    return discoveredRooms.any(
+      (RoomInfo room) => room.roomName.trim().toLowerCase() == candidate,
+    );
+  }
+
+  RoomInfo? findRoomByName(String name, {bool includeHidden = false}) {
+    final String candidate = name.trim().toLowerCase();
+    if (candidate.isEmpty) {
+      return null;
+    }
+
+    final List<RoomInfo> source = includeHidden
+        ? discoveredRooms
+        : visibleRooms;
+    for (final RoomInfo room in source) {
+      if (room.roomName.trim().toLowerCase() == candidate) {
+        return room;
+      }
+    }
+    return null;
   }
 
   Future<void> startDiscovery() async {
@@ -86,10 +120,18 @@ class LanChatController extends ChangeNotifier {
     }
   }
 
-  Future<void> hostRoom({
+  Future<bool> hostRoom({
     required String yourName,
     required String room,
+    bool hidden = false,
+    RoomSecurityType securityType = RoomSecurityType.none,
+    String? securityValue,
   }) async {
+    if (isRoomNameTaken(room)) {
+      setStatus('A room with this name already exists. Pick another name.');
+      return false;
+    }
+
     await disconnect();
     await startDiscovery();
 
@@ -99,6 +141,9 @@ class LanChatController extends ChangeNotifier {
       roomName = room;
       mode = ChatMode.hosting;
       status = 'Hosting on local network';
+      _hostHidden = hidden;
+      _hostSecurityType = securityType;
+      _hostSecurityValue = securityValue?.trim();
 
       participants
         ..clear()
@@ -114,17 +159,29 @@ class LanChatController extends ChangeNotifier {
       _startAnnouncements();
       _addSystemMessage('Room "$roomName" created.');
       _notify();
+      return true;
     } catch (e) {
       status = 'Host failed: $e';
       mode = ChatMode.idle;
       _notify();
+      return false;
     }
   }
 
-  Future<void> joinRoom({
+  Future<bool> joinRoom({
     required RoomInfo room,
     required String yourName,
+    String? securityValue,
   }) async {
+    if (room.requiresSecurity) {
+      final String provided = securityValue?.trim() ?? '';
+      final String expected = room.securityValue?.trim() ?? '';
+      if (provided.isEmpty || provided != expected) {
+        setStatus('Security check failed. Wrong password/PIN/pattern.');
+        return false;
+      }
+    }
+
     await disconnect();
     await startDiscovery();
 
@@ -169,10 +226,12 @@ class LanChatController extends ChangeNotifier {
 
       _addSystemMessage('Connected to room "$roomName".');
       _notify();
+      return true;
     } catch (e) {
       status = 'Join failed: $e';
       mode = ChatMode.idle;
       _notify();
+      return false;
     }
   }
 
@@ -226,6 +285,9 @@ class LanChatController extends ChangeNotifier {
     mode = ChatMode.idle;
     roomName = null;
     hostAddress = null;
+    _hostHidden = false;
+    _hostSecurityType = RoomSecurityType.none;
+    _hostSecurityValue = null;
     status = 'Ready';
     _notify();
   }
@@ -269,6 +331,14 @@ class LanChatController extends ChangeNotifier {
         roomName: (decoded['roomName'] ?? 'Secret Chat').toString(),
         port: port,
         lastSeen: DateTime.now(),
+        hidden: decoded['hidden'] == true,
+        securityType: roomSecurityTypeFromString(
+          (decoded['securityType'] ?? 'none').toString(),
+        ),
+        securityValue:
+            (decoded['securityValue'] ?? '').toString().trim().isEmpty
+            ? null
+            : (decoded['securityValue'] ?? '').toString(),
       );
       _roomsByKey[room.key] = room;
       _notify();
@@ -297,6 +367,11 @@ class LanChatController extends ChangeNotifier {
             'hostName': localUserName,
             'port': chatPort,
             'hostIp': hostAddress,
+            'hidden': _hostHidden,
+            'securityType': roomSecurityTypeToWire(_hostSecurityType),
+            'securityValue': _hostSecurityType == RoomSecurityType.none
+                ? null
+                : _hostSecurityValue,
           }),
         );
         sender.send(bytes, InternetAddress('255.255.255.255'), discoveryPort);

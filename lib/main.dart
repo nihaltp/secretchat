@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'screens/chat_home_page.dart';
+import 'screens/app_flow_screen.dart';
 import 'settings/theme_controller.dart';
 
 void main() {
@@ -45,7 +45,7 @@ class _SecretChatAppState extends State<SecretChatApp> {
             ),
             useMaterial3: true,
           ),
-          home: ChatHomePage(themeController: _themeController),
+          home: AppFlowScreen(themeController: _themeController),
         );
       },
     );
