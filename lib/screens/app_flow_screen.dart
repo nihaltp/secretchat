@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../chat/controllers/lan_chat_controller.dart';
 import '../chat/models/room_creation_data.dart';
 import '../chat/models/room_info.dart';
+import '../platform/hotspot_service.dart';
 import '../security/app_lock_controller.dart';
 import '../settings/theme_controller.dart';
 import 'chat_screen.dart';
@@ -21,10 +22,12 @@ class AppFlowScreen extends StatefulWidget {
     super.key,
     required this.themeController,
     required this.appLockController,
+    this.hotspotService = const MethodChannelHotspotService(),
   });
 
   final ThemeController themeController;
   final AppLockController appLockController;
+  final HotspotService hotspotService;
 
   @override
   State<AppFlowScreen> createState() => _AppFlowScreenState();
@@ -149,31 +152,10 @@ class _AppFlowScreenState extends State<AppFlowScreen>
 
   Future<void> _onHostNetworkSelected(String userName) async {
     _userName = userName;
+    final bool openedHotspotSettings = await widget.hotspotService
+        .openHotspotSettings();
 
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Turn On Hotspot'),
-          content: const Text(
-            'Enable your phone hotspot from system settings, then tap Continue.\n\n'
-            'After that, you will be taken to Rooms.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Continue'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmed != true) {
+    if (!mounted) {
       return;
     }
 
@@ -182,7 +164,9 @@ class _AppFlowScreenState extends State<AppFlowScreen>
       _stage = AppStage.rooms;
     });
     _controller.setStatus(
-      'Host network mode active. Create a room for users connected to your hotspot.',
+      openedHotspotSettings
+          ? 'Hotspot settings opened. Turn on your hotspot, then create a room.'
+          : 'Open mobile hotspot settings and turn it on, then create a room.',
     );
     await _controller.startDiscovery();
   }

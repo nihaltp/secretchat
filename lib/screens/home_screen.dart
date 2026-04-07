@@ -55,45 +55,71 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Start by choosing network mode',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              key: const Key('display_name_field'),
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Your display name',
-                border: OutlineInputBorder(),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight - 32,
+                ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Start by choosing network mode',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 20),
+                        TextField(
+                          key: const Key('display_name_field'),
+                          controller: _nameController,
+                          textAlign: TextAlign.center,
+                          decoration: const InputDecoration(
+                            labelText: 'Your display name',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          height: 64,
+                          child: FilledButton.icon(
+                            key: const Key('host_network_button'),
+                            onPressed: () => _run(widget.onHostPressed),
+                            icon: const Icon(Icons.wifi_tethering, size: 28),
+                            label: const Text('Host Network'),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 64,
+                          child: OutlinedButton.icon(
+                            key: const Key('use_wifi_button'),
+                            onPressed: () => _run(widget.onWifiPressed),
+                            icon: const Icon(Icons.wifi, size: 28),
+                            label: const Text('Use Wi-Fi'),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Host Network: Open hotspot settings, then create rooms.\n'
+                          'Use Wi-Fi: Join your existing LAN and discover rooms.',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              key: const Key('host_network_button'),
-              onPressed: () => _run(widget.onHostPressed),
-              icon: const Icon(Icons.wifi_tethering),
-              label: const Text('Host Network'),
-            ),
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              key: const Key('use_wifi_button'),
-              onPressed: () => _run(widget.onWifiPressed),
-              icon: const Icon(Icons.wifi),
-              label: const Text('Use Wi-Fi'),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Host Network: Turn on your hotspot, then create rooms.\n'
-              'Use Wi-Fi: Join your existing LAN and discover rooms.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
