@@ -24,7 +24,7 @@ class MainActivity : FlutterActivity() {
 
 	private fun openHotspotSettings(result: MethodChannel.Result) {
 		try {
-			startActivity(Intent(Settings.ACTION_TETHER_SETTINGS))
+			startActivity(Intent("android.settings.TETHER_SETTINGS"))
 			result.success(true)
 		} catch (_: ActivityNotFoundException) {
 			try {
