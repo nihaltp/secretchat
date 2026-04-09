@@ -1,4 +1,4 @@
-package com.example.secret_chat
+package com.nihaltp.secret_chat
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
