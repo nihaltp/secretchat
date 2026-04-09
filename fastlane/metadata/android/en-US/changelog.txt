@@ -1,0 +1,7 @@
+v1.0.0 - Release
+• Initial release of Secret Chat
+• LAN messaging without internet connection
+• Multiple authentication options (password, PIN, pattern lock)
+• App-level biometric security
+• Dark theme support
+• Hidden rooms for privacy

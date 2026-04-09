@@ -1,0 +1,32 @@
+Secret Chat is a local area network (LAN) messaging application that allows you to chat with friends and colleagues without an internet connection. Perfect for conferences, offices, events, or any situation where you need secure, private communication within a local network.
+
+Features:
+• No Internet Required - Chat over your local WiFi or mobile hotspot
+• Privacy Focused - Messages stay on your local network
+• Multiple Security Options - Protect your rooms with passwords, PINs, or pattern locks
+• Dark Theme - Easy on the eyes with built-in dark mode
+• App Lock - Biometric or screen lock protection for the entire app
+• Hidden Rooms - Create private rooms that don't appear in the room list
+• Message History - Messages persist while the app is running, cleared when closed
+• Material Design 3 - Modern, clean interface
+
+How to Use:
+1. Choose "Host Network" to create a room and share as the host
+2. Or choose "Use Wi-Fi" to browse and join existing rooms
+3. Optionally protect your room with a password, PIN, or pattern
+4. Start chatting - all communication stays within your local network
+
+Security:
+- All communication happens locally on your WiFi network
+- No data transmitted to external servers
+- Messages are not stored permanently
+- Supports biometric authentication
+- Pattern lock option for additional security
+
+Perfect for:
+• Office communications and quick collaboration
+• Conferences and events
+• Classroom discussions
+• LAN parties and gaming events
+• Emergency communication when internet is unavailable
+• Privacy-conscious users who want local control
