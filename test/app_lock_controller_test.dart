@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Secret Chat Contributors
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:secret_chat/security/app_lock_controller.dart';
 import 'package:secret_chat/security/app_lock_service.dart';

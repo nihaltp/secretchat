@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Secret Chat Contributors
+
 import 'package:local_auth/local_auth.dart';
 
 abstract class AppLockService {

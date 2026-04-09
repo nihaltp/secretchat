@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Secret Chat Contributors
+
 import 'package:flutter/material.dart';
 
 import '../chat/controllers/lan_chat_controller.dart';

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 Secret Chat Contributors
+
 package com.nihaltp.secret_chat
 
 import android.content.ActivityNotFoundException
