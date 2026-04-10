@@ -16,6 +16,8 @@ import '../models/room_info.dart';
 
 part 'lan_chat_controller_types.dart';
 part 'lan_chat_controller_network.dart';
+part 'lan_chat_controller_history_sync.dart';
+part 'lan_chat_controller_message_store.dart';
 
 class LanChatController extends ChangeNotifier {
   static const int _historyPageSize = 25;
@@ -975,73 +977,7 @@ class LanChatController extends ChangeNotifier {
     }
   }
 
-  void _requestHistorySyncForPeer(_ClientPeer peer) {
-    final String requestId = _generateId();
-    final String targetUserId = peer.userId ?? peer.id;
-    _historySyncTargetsByRequest[requestId] = _HistorySyncTarget(
-      requestId: requestId,
-      targetUserId: targetUserId,
-    );
 
-    _sendLocalHistorySync(
-      requestId: requestId,
-      targetUserId: targetUserId,
-      targetPeer: peer,
-    );
-
-    for (final _ClientPeer otherPeer in _clients.values) {
-      if (otherPeer.id == peer.id) {
-        continue;
-      }
-      _sendLine(otherPeer.socket, <String, dynamic>{
-        'type': 'historySyncRequest',
-        'requestId': requestId,
-        'targetUserId': targetUserId,
-      });
-    }
-  }
-
-  void _sendLocalHistorySync({
-    required String requestId,
-    required String targetUserId,
-    required _ClientPeer targetPeer,
-  }) {
-    _sendLine(targetPeer.socket, <String, dynamic>{
-      'type': 'historySyncData',
-      'requestId': requestId,
-      'messages': _buildLocalHistoryMessagesForTarget(targetUserId),
-    });
-  }
-
-  List<Map<String, dynamic>> _buildLocalHistoryMessagesForTarget(
-    String targetUserId,
-  ) {
-    final List<_PresenceWindow> windows =
-        _presenceWindowsByUser[targetUserId] ?? <_PresenceWindow>[];
-    if (windows.isEmpty) {
-      return const <Map<String, dynamic>>[];
-    }
-
-    final List<_HistoryEntry> visible = _localSentEntries.where((entry) {
-      return _canUserAccessMessage(entry.timestamp, windows);
-    }).toList();
-    visible.sort((a, b) => a.sequence.compareTo(b.sequence));
-    return visible.map((entry) => entry.toPacket()).toList();
-  }
-
-  void _applyHistorySyncData(Map<String, dynamic> packet) {
-    final dynamic rawMessages = packet['messages'];
-    if (rawMessages is! List) {
-      return;
-    }
-
-    for (final dynamic raw in rawMessages) {
-      if (raw is! Map<String, dynamic>) {
-        continue;
-      }
-      _appendChatFromPacket(raw);
-    }
-  }
 
   Map<String, dynamic> _buildHostChatPacket({
     required String senderId,
@@ -1100,52 +1036,7 @@ class LanChatController extends ChangeNotifier {
     return false;
   }
 
-  void _sendHistoryPage(
-    _ClientPeer peer, {
-    required String requestId,
-    required int? beforeSequence,
-    required int limit,
-  }) {
-    final String effectiveUserId = peer.userId ?? peer.id;
-    final List<_PresenceWindow> windows =
-        _presenceWindowsByUser[effectiveUserId] ?? <_PresenceWindow>[];
 
-    if (!_hostHistoryEnabled || windows.isEmpty) {
-      _sendLine(peer.socket, <String, dynamic>{
-        'type': 'historyPage',
-        'requestId': requestId,
-        'messages': const <Map<String, dynamic>>[],
-        'hasMore': false,
-        'nextBeforeSequence': null,
-      });
-      return;
-    }
-
-    final int normalizedLimit = limit.clamp(1, 100);
-    final Iterable<_HistoryEntry> visible = _historyEntries.where(
-      (_HistoryEntry entry) => _canUserAccessMessage(entry.timestamp, windows),
-    );
-
-    final Iterable<_HistoryEntry> eligible = beforeSequence == null
-        ? visible
-        : visible.where((entry) => entry.sequence < beforeSequence);
-    final List<_HistoryEntry> eligibleList = eligible.toList();
-
-    final int startIndex = eligibleList.length > normalizedLimit
-        ? eligibleList.length - normalizedLimit
-        : 0;
-    final List<_HistoryEntry> page = eligibleList.sublist(startIndex);
-    final bool hasMore = startIndex > 0;
-    final int? nextBeforeSequence = hasMore ? page.first.sequence : null;
-
-    _sendLine(peer.socket, <String, dynamic>{
-      'type': 'historyPage',
-      'requestId': requestId,
-      'messages': page.map((entry) => entry.toPacket()).toList(),
-      'hasMore': hasMore,
-      'nextBeforeSequence': nextBeforeSequence,
-    });
-  }
 
   Future<void> loadOlderMessages() async {
     if (!_joinedRoomHistoryEnabled ||
@@ -1180,161 +1071,7 @@ class LanChatController extends ChangeNotifier {
     }
   }
 
-  void _applyHistoryPage(Map<String, dynamic> packet) {
-    final String requestId = (packet['requestId'] ?? '').toString();
-    final dynamic rawMessages = packet['messages'];
-    final bool hasMore = packet['hasMore'] == true;
-    final int? nextBeforeSequence = packet['nextBeforeSequence'] is int
-        ? packet['nextBeforeSequence'] as int
-        : int.tryParse((packet['nextBeforeSequence'] ?? '').toString());
 
-    final List<ChatMessage> pageMessages = <ChatMessage>[];
-    if (rawMessages is List) {
-      for (final dynamic raw in rawMessages) {
-        if (raw is! Map<String, dynamic>) {
-          continue;
-        }
-
-        final String text = (raw['text'] ?? '').toString().trim();
-        if (text.isEmpty) {
-          continue;
-        }
-
-        final String messageId = (raw['messageId'] ?? _generateId()).toString();
-        if (_messageIds.contains(messageId)) {
-          continue;
-        }
-
-        final DateTime timestamp =
-            DateTime.tryParse((raw['timestamp'] ?? '').toString()) ??
-            DateTime.now();
-        pageMessages.add(
-          ChatMessage(
-            id: messageId,
-            senderId: (raw['senderId'] ?? '').toString(),
-            senderName: (raw['senderName'] ?? 'Unknown').toString(),
-            text: text,
-            timestamp: timestamp,
-            sequence: raw['sequence'] is int
-                ? raw['sequence'] as int
-                : int.tryParse((raw['sequence'] ?? '').toString()),
-          ),
-        );
-        _messageIds.add(messageId);
-      }
-    }
-
-    messages.insertAll(0, pageMessages);
-    _historyHasMore = hasMore;
-    _historyCursorBeforeSequence = nextBeforeSequence;
-    _historyLoading = false;
-
-    final Completer<void>? completer = _pendingHistoryRequests.remove(requestId);
-    if (completer != null && !completer.isCompleted) {
-      completer.complete();
-    }
-    _notify();
-  }
-
-  void _appendChatFromPacket(Map<String, dynamic> packet) {
-    final String text = (packet['text'] ?? '').toString().trim();
-    if (text.isEmpty) {
-      return;
-    }
-    final String messageId = (packet['messageId'] ?? _generateId()).toString();
-    if (_messageIds.contains(messageId)) {
-      return;
-    }
-    final DateTime timestamp =
-        DateTime.tryParse((packet['timestamp'] ?? '').toString()) ??
-        DateTime.now();
-    messages.add(
-      ChatMessage(
-        id: messageId,
-        senderId: (packet['senderId'] ?? '').toString(),
-        senderName: (packet['senderName'] ?? 'Unknown').toString(),
-        text: text,
-        timestamp: timestamp,
-        sequence: packet['sequence'] is int
-            ? packet['sequence'] as int
-            : int.tryParse((packet['sequence'] ?? '').toString()),
-      ),
-    );
-    final String senderId = (packet['senderId'] ?? '').toString();
-    if (senderId == localUserId) {
-      final int sequence = packet['sequence'] is int
-          ? packet['sequence'] as int
-          : int.tryParse((packet['sequence'] ?? '').toString()) ??
-                (_localSentEntries.isEmpty
-                    ? 1
-                    : _localSentEntries.last.sequence + 1);
-      final bool alreadyTracked = _localSentEntries.any(
-        (entry) => entry.messageId == messageId,
-      );
-      if (!alreadyTracked) {
-        _localSentEntries.add(
-          _HistoryEntry(
-            sequence: sequence,
-            messageId: messageId,
-            senderId: senderId,
-            senderName: (packet['senderName'] ?? 'Unknown').toString(),
-            text: text,
-            timestamp: timestamp,
-          ),
-        );
-      }
-    }
-    _messageIds.add(messageId);
-    _notify();
-  }
-
-  void _addSystemMessage(
-    String text, {
-    String? event,
-    String? userId,
-    String? name,
-    DateTime? eventTimestamp,
-    Duration? ephemeralDuration,
-  }) {
-    final String id = _generateId();
-    messages.add(
-      ChatMessage(
-        id: id,
-        senderId: 'system',
-        senderName: 'System',
-        text: text,
-        timestamp: DateTime.now(),
-        system: true,
-      ),
-    );
-    if (event != null && userId != null && name != null) {
-      _applyPresenceEvent(<String, dynamic>{
-        'event': event,
-        'userId': userId,
-        'name': name,
-        if (eventTimestamp != null)
-          'eventTimestamp': eventTimestamp.toIso8601String(),
-      });
-    }
-    if (ephemeralDuration != null) {
-      _scheduleEphemeralMessageRemoval(id, ephemeralDuration);
-    }
-    _messageIds.add(id);
-    _notify();
-  }
-
-  void _scheduleEphemeralMessageRemoval(String messageId, Duration duration) {
-    _ephemeralMessageTimers[messageId]?.cancel();
-    _ephemeralMessageTimers[messageId] = Timer(duration, () {
-      _ephemeralMessageTimers.remove(messageId);
-      final int before = messages.length;
-      messages.removeWhere((message) => message.id == messageId);
-      _messageIds.remove(messageId);
-      if (messages.length != before) {
-        _notify();
-      }
-    });
-  }
 
   Future<void> _handleHostDisconnected({String? reason}) async {
     if (mode != ChatMode.connected) {
@@ -1462,22 +1199,7 @@ class LanChatController extends ChangeNotifier {
     }
   }
 
-  void _removeMessagesFromSender(String senderId) {
-    final Set<String> removedIds = messages
-        .where((message) => !message.system && message.senderId == senderId)
-        .map((message) => message.id)
-        .toSet();
-    if (removedIds.isEmpty) {
-      return;
-    }
 
-    messages.removeWhere(
-      (message) => !message.system && message.senderId == senderId,
-    );
-    _messageIds.removeWhere((id) => removedIds.contains(id));
-    _historyEntries.removeWhere((entry) => entry.senderId == senderId);
-    _localSentEntries.removeWhere((entry) => entry.senderId == senderId);
-  }
 
   void _syncPresenceFromParticipant(_ParticipantState state) {
     final List<_PresenceWindow> windows = _presenceWindowsByUser.putIfAbsent(
