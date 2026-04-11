@@ -60,14 +60,17 @@ flutter pub get
 # Run the app
 flutter run
 
-# Build APK for F-Droid
-flutter build apk --split-per-abi
+# Build universal release APK
+flutter build apk --release
+
+# Build split release APKs (per ABI)
+flutter build apk --release --split-per-abi
 ```
 
 ### Build Variants
 - **Debug**: `flutter run`
 - **Release**: `flutter build apk --release`
-- **APK Split**: `flutter build apk --split-per-abi`
+- **APK Split**: `flutter build apk --release --split-per-abi`
 
 ## 📋 Architecture
 
