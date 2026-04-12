@@ -105,7 +105,9 @@ class LanChatController extends ChangeNotifier {
     }
   }
 
-  static Future<String>? _pendingLocalUserIdFuture;
+  // Must stay instance-scoped: a static Future can be shared across multiple
+  // controllers and leak one user's ID into another controller.
+  Future<String>? _pendingLocalUserIdFuture;
   
   Future<String> _loadOrCreateLocalUserId() {
     if (_pendingLocalUserIdFuture != null) {
