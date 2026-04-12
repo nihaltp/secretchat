@@ -1,3 +1,9 @@
+v1.1.4 - Direct Chat Badge and Exit Flow
+• Direct chat indicators now appear only after actual direct-message activity
+• Hidden direct chats no longer advertise as soon as they are hosted
+• Leaving a direct chat now returns to Network Overview
+• Rooms screen stays rooms-only; direct chats remain on Network Overview
+
 v1.1.3 - Direct Chat and Discovery Reliability
 • Dedicated direct-chat ports: userDiscoveryPort (48652) and userChatPort (48653)
 • Room traffic kept isolated on roomDiscoveryPort/roomChatPort

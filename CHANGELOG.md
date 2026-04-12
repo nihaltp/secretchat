@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.1.4 - 2026-04-12
+
+- Refined direct-chat discovery and badge behavior:
+  - Direct chat indicators now appear only after actual direct-message activity.
+  - Hidden direct chats no longer advertise as soon as they are hosted.
+  - Leaving a direct chat returns to Network Overview instead of Rooms.
+- Kept room browsing focused on rooms only:
+  - Direct chat entries are excluded from the Rooms screen.
+  - Network Overview remains the place to discover and open direct chats.
+- Validation updates:
+  - Ran `flutter analyze` and `flutter test` successfully after the chat-flow changes.
+
 ## v1.1.3 - 2026-04-12
 
 - Direct user chat now uses dedicated transport channels:
