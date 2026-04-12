@@ -134,6 +134,7 @@ class SettingsScreen extends StatelessWidget {
                         ],
                       ),
                       bottomNavigationBar: AppBottomNav(
+                        activeItem: AppBottomNavItem.settings,
                         onOpenUsers: onOpenNetworkOverview == null
                             ? null
                             : openUsers,

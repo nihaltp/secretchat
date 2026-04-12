@@ -273,6 +273,7 @@ class _ChatScreenState extends State<ChatScreen> {
         ],
       ),
       bottomNavigationBar: AppBottomNav(
+        activeItem: AppBottomNavItem.room,
         onOpenUsers: widget.onOpenNetworkOverview,
         onOpenRooms: widget.onOpenRooms,
         onOpenSettings: widget.onOpenSettings,

@@ -361,6 +361,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
         ),
       ),
       bottomNavigationBar: AppBottomNav(
+        activeItem: AppBottomNavItem.room,
         onOpenUsers: widget.onOpenNetworkOverview,
         onOpenRooms: widget.onOpenRooms,
         onOpenSettings: widget.onOpenSettings,

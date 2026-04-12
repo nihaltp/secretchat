@@ -140,6 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       bottomNavigationBar: AppBottomNav(
+        activeItem: AppBottomNavItem.settings,
         onOpenUsers: widget.onOpenNetworkOverview,
         onOpenRooms: widget.onOpenRooms,
         onOpenSettings: widget.onOpenSettings,

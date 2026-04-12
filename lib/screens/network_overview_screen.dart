@@ -189,6 +189,7 @@ class NetworkOverviewScreen extends StatelessWidget {
         ],
       ),
       bottomNavigationBar: AppBottomNav(
+        activeItem: AppBottomNavItem.user,
         onOpenUsers: onOpenNetworkOverview,
         onOpenRooms: onOpenRooms,
         onOpenSettings: onOpenSettings,
