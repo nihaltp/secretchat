@@ -639,22 +639,6 @@ class _AppFlowScreenState extends State<AppFlowScreen>
     });
   }
 
-  void _openUserChatsFromOverview() {
-    if (_overviewUserChats.isNotEmpty) {
-      setState(() {
-        _openRoom(_overviewUserChats.first.key);
-      });
-      return;
-    }
-
-    if (_networkUsers.isNotEmpty) {
-      unawaited(_openUserChat(_networkUsers.first));
-      return;
-    }
-
-    _showSnack('No users available for direct chat yet.');
-  }
-
   Future<void> _openUserChat(NetworkUserInfo user) async {
     if (!_canAccessRooms) {
       _showSnack('Connect to Wi-Fi or use Host Network first.');
@@ -946,8 +930,9 @@ class _AppFlowScreenState extends State<AppFlowScreen>
           onWifiPressed: _onUseWifiSelected,
           // Intentionally disabled on first screen until host/wifi mode is chosen.
           // This avoids entering user/room flows before network mode is established.
-          onOpenNetworkOverview: null,
-          onOpenRooms: null,
+          onOpenNetworkOverview:
+              null, // ignore: avoid_redundant_argument_values
+          onOpenRooms: null, // ignore: avoid_redundant_argument_values
           onOpenSettings: _openSettings,
           initialDisplayName: _userName,
           onDisplayNameChanged: (String value) {
