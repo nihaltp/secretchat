@@ -3,9 +3,9 @@
 
 import 'package:flutter/material.dart';
 
-import '../chat/controllers/lan_chat_controller.dart';
-import '../chat/models/chat_message.dart';
-import '../widgets/app_logo_title.dart';
+import 'package:secret_chat/chat/controllers/lan_chat_controller.dart';
+import 'package:secret_chat/chat/models/chat_message.dart';
+import 'package:secret_chat/widgets/app_logo_title.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:secret_chat/chat/controllers/lan_chat_controller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   group('LanChatController Concurrency Tests', () {

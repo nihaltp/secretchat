@@ -3,11 +3,11 @@
 
 import 'package:flutter/material.dart';
 
-import 'screens/app_flow_screen.dart';
-import 'security/app_lock_controller.dart';
-import 'settings/default_room_listening_controller.dart';
-import 'settings/network_privacy_controller.dart';
-import 'settings/theme_controller.dart';
+import 'package:secret_chat/screens/app_flow_screen.dart';
+import 'package:secret_chat/security/app_lock_controller.dart';
+import 'package:secret_chat/settings/default_room_listening_controller.dart';
+import 'package:secret_chat/settings/network_privacy_controller.dart';
+import 'package:secret_chat/settings/theme_controller.dart';
 
 void main() {
   runApp(const SecretChatApp());
@@ -54,7 +54,6 @@ class _SecretChatAppState extends State<SecretChatApp> {
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
               seedColor: const Color(0xFF007A5E),
-              brightness: Brightness.light,
             ),
             useMaterial3: true,
           ),

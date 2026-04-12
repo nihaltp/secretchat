@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Secret Chat Contributors
 
-import 'lan_chat_controller.dart';
-import '../chat_constants.dart';
+import 'package:secret_chat/chat/chat_constants.dart';
+import 'package:secret_chat/chat/controllers/lan_chat_controller.dart';
 
 /// DirectChatController extends LanChatController with userChatPort and userDiscoveryPort
 /// for isolated direct peer-to-peer communication separate from room chat.

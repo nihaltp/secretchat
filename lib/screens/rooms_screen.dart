@@ -2,11 +2,10 @@
 // Copyright (c) 2026 Secret Chat Contributors
 
 import 'package:flutter/material.dart';
-
-import '../chat/models/room_info.dart';
-import 'models/active_room_item.dart';
-import '../widgets/app_logo_title.dart';
-import 'pattern_lock_screen.dart';
+import 'package:secret_chat/chat/models/room_info.dart';
+import 'package:secret_chat/screens/models/active_room_item.dart';
+import 'package:secret_chat/screens/pattern_lock_screen.dart';
+import 'package:secret_chat/widgets/app_logo_title.dart';
 
 class RoomsScreen extends StatefulWidget {
   const RoomsScreen({
@@ -121,7 +120,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(null),
+              onPressed: () => Navigator.of(context).pop(),
               child: const Text('Cancel'),
             ),
             FilledButton(
@@ -153,7 +152,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(null),
+              onPressed: () => Navigator.of(context).pop(),
               child: const Text('Cancel'),
             ),
             FilledButton(

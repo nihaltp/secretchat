@@ -17,7 +17,7 @@ class _FakeAppLockService implements AppLockService {
 void main() {
   test('App lock can be enabled with successful authentication', () async {
     final AppLockController controller = AppLockController(
-      service: _FakeAppLockService(result: true),
+      service: _FakeAppLockService(),
     );
 
     final bool ok = await controller.setEnabled(true);

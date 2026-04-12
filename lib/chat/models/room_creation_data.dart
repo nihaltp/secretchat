@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Secret Chat Contributors
 
-import 'room_info.dart';
+import 'package:secret_chat/chat/models/room_info.dart';
 
 class RoomCreationData {
   RoomCreationData({

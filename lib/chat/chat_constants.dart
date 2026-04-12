@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 Secret Chat Contributors
 
-import 'models/room_info.dart';
+import 'package:secret_chat/chat/models/room_info.dart';
 
 const int roomDiscoveryPort = 48650;
 const int roomChatPort = 48651;

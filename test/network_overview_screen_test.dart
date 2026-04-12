@@ -39,10 +39,9 @@ void main() {
               ActiveRoomItem(
                 key: 'chat-1',
                 roomName: 'Charlie',
-                unreadCount: 0,
               ),
             ],
-            discoveredRooms: <RoomInfo>[],
+            discoveredRooms: const <RoomInfo>[],
             networkUsers: const <NetworkUserInfo>[pendingUser],
             onBack: () {},
             onOpenSettings: () {},
@@ -83,7 +82,6 @@ void main() {
       userId: 'u-3',
       displayName: 'Carol',
       hasPendingMessages: true,
-      pendingMessageCount: 0,
       allowsIdChat: false,
     );
 
@@ -95,7 +93,7 @@ void main() {
           status: null,
           activeRooms: const <ActiveRoomItem>[],
           activeUserChats: const <ActiveRoomItem>[],
-          discoveredRooms: <RoomInfo>[],
+          discoveredRooms: const <RoomInfo>[],
           networkUsers: const <NetworkUserInfo>[pendingDotUser],
           onBack: () {},
           onOpenSettings: () {},
@@ -128,7 +126,7 @@ void main() {
                 unreadCount: 3,
               ),
             ],
-            discoveredRooms: <RoomInfo>[],
+            discoveredRooms: const <RoomInfo>[],
             networkUsers: const <NetworkUserInfo>[
               NetworkUserInfo(
                 userId: 'u-3',

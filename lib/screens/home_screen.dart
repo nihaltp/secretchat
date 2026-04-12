@@ -3,7 +3,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../widgets/app_logo_title.dart';
+import 'package:secret_chat/widgets/app_logo_title.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({

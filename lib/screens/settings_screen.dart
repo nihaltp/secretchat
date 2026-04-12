@@ -3,11 +3,11 @@
 
 import 'package:flutter/material.dart';
 
-import '../security/app_lock_controller.dart';
-import '../settings/default_room_listening_controller.dart';
-import '../settings/network_privacy_controller.dart';
-import '../settings/theme_controller.dart';
-import '../widgets/app_logo_title.dart';
+import 'package:secret_chat/security/app_lock_controller.dart';
+import 'package:secret_chat/settings/default_room_listening_controller.dart';
+import 'package:secret_chat/settings/network_privacy_controller.dart';
+import 'package:secret_chat/settings/theme_controller.dart';
+import 'package:secret_chat/widgets/app_logo_title.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({

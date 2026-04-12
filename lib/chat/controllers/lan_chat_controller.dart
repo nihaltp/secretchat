@@ -8,21 +8,18 @@ import 'dart:math';
 
 import 'package:battery_plus/battery_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:secret_chat/chat/chat_constants.dart';
+import 'package:secret_chat/chat/controllers/failover_weights.dart';
+import 'package:secret_chat/chat/models/chat_message.dart';
+import 'package:secret_chat/chat/models/room_info.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'failover_weights.dart';
-import '../chat_constants.dart';
-import '../models/chat_message.dart';
-import '../models/room_info.dart';
-
-part 'lan_chat_controller_types.dart';
-part 'lan_chat_controller_network.dart';
 part 'lan_chat_controller_history_sync.dart';
 part 'lan_chat_controller_message_store.dart';
+part 'lan_chat_controller_network.dart';
+part 'lan_chat_controller_types.dart';
 
 class LanChatController extends ChangeNotifier {
-  static const int _historyPageSize = 25;
-  static const String _prefKeyLocalUserId = 'secret_chat_local_user_id';
 
   LanChatController({
     Future<int> Function()? batteryLevelProvider,
@@ -33,6 +30,8 @@ class LanChatController extends ChangeNotifier {
        _localUserIdProvider = localUserIdProvider,
        _chatPort = chatPortOverride ?? roomChatPort,
        _discoveryPort = discoveryPortOverride ?? roomDiscoveryPort;
+  static const int _historyPageSize = 25;
+  static const String _prefKeyLocalUserId = 'secret_chat_local_user_id';
 
   final List<ChatMessage> messages = <ChatMessage>[];
   final List<String> participants = <String>[];
@@ -201,7 +200,6 @@ class LanChatController extends ChangeNotifier {
       final RawDatagramSocket listener = await RawDatagramSocket.bind(
         InternetAddress.anyIPv4,
         _discoveryPort,
-        reuseAddress: true,
       );
 
       listener.listen((RawSocketEvent event) {
@@ -224,7 +222,6 @@ class LanChatController extends ChangeNotifier {
           final RawDatagramSocket altListener = await RawDatagramSocket.bind(
             InternetAddress.anyIPv4,
             userDiscoveryPort,
-            reuseAddress: true,
           );
           altListener.listen((RawSocketEvent event) {
             if (event != RawSocketEvent.read) {
@@ -334,7 +331,7 @@ class LanChatController extends ChangeNotifier {
         hidden: hidden,
       );
       if (!_deferAnnouncementsUntilFirstMessage) {
-        _startAnnouncements();
+        unawaited(_startAnnouncements());
       }
       _addSystemMessage('Room "$roomName" created.');
       _notify();
@@ -1522,7 +1519,7 @@ class LanChatController extends ChangeNotifier {
     );
     _serverSocket!.listen(_onClientConnected);
     _startBatteryUpdates();
-    _startAnnouncements();
+    unawaited(_startAnnouncements());
     status = 'Hosting recovered room on local network';
     _notify();
   }

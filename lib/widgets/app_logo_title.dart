@@ -12,7 +12,6 @@ class AppLogoTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisSize: MainAxisSize.max,
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(6),

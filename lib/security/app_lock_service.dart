@@ -24,7 +24,6 @@ class LocalAuthAppLockService implements AppLockService {
 
       return _localAuth.authenticate(
         localizedReason: reason,
-        biometricOnly: false,
         persistAcrossBackgrounding: true,
       );
     } catch (_) {

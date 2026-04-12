@@ -3,9 +3,9 @@
 
 import 'package:flutter/material.dart';
 
-import 'models/pattern_lock_mode.dart';
-import '../widgets/app_logo_title.dart';
-import '../widgets/pattern_lock_board.dart';
+import 'package:secret_chat/screens/models/pattern_lock_mode.dart';
+import 'package:secret_chat/widgets/app_logo_title.dart';
+import 'package:secret_chat/widgets/pattern_lock_board.dart';
 
 class PatternLockScreen extends StatefulWidget {
   const PatternLockScreen.setup({super.key})
@@ -85,7 +85,7 @@ class _PatternLockScreenState extends State<PatternLockScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: PatternLockBoard(
-                  key: Key('pattern_lock_board'),
+                  key: const Key('pattern_lock_board'),
                   onCompleted: _onPatternComplete,
                 ),
               ),

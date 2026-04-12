@@ -5,27 +5,26 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:secret_chat/chat/chat_constants.dart';
+import 'package:secret_chat/chat/controllers/direct_chat_controller.dart';
+import 'package:secret_chat/chat/controllers/lan_chat_controller.dart';
+import 'package:secret_chat/chat/models/network_user_info.dart';
+import 'package:secret_chat/chat/models/room_creation_data.dart';
+import 'package:secret_chat/chat/models/room_info.dart';
+import 'package:secret_chat/platform/hotspot_service.dart';
+import 'package:secret_chat/screens/chat_screen.dart';
+import 'package:secret_chat/screens/create_room_screen.dart';
+import 'package:secret_chat/screens/home_screen.dart';
+import 'package:secret_chat/screens/models/active_room_item.dart';
+import 'package:secret_chat/screens/models/app_stage.dart';
+import 'package:secret_chat/screens/network_overview_screen.dart';
+import 'package:secret_chat/screens/rooms_screen.dart';
+import 'package:secret_chat/screens/settings_screen.dart';
+import 'package:secret_chat/security/app_lock_controller.dart';
+import 'package:secret_chat/settings/default_room_listening_controller.dart';
+import 'package:secret_chat/settings/network_privacy_controller.dart';
+import 'package:secret_chat/settings/theme_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../chat/controllers/direct_chat_controller.dart';
-import '../chat/controllers/lan_chat_controller.dart';
-import '../chat/chat_constants.dart';
-import '../chat/models/network_user_info.dart';
-import '../chat/models/room_creation_data.dart';
-import '../chat/models/room_info.dart';
-import '../platform/hotspot_service.dart';
-import '../security/app_lock_controller.dart';
-import '../settings/default_room_listening_controller.dart';
-import '../settings/network_privacy_controller.dart';
-import '../settings/theme_controller.dart';
-import 'chat_screen.dart';
-import 'create_room_screen.dart';
-import 'models/app_stage.dart';
-import 'home_screen.dart';
-import 'models/active_room_item.dart';
-import 'network_overview_screen.dart';
-import 'rooms_screen.dart';
-import 'settings_screen.dart';
 
 class AppFlowScreen extends StatefulWidget {
   const AppFlowScreen({

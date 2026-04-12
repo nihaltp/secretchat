@@ -2,11 +2,10 @@
 // Copyright (c) 2026 Secret Chat Contributors
 
 import 'package:flutter/material.dart';
-
-import '../chat/models/room_creation_data.dart';
-import '../chat/models/room_info.dart';
-import '../widgets/app_logo_title.dart';
-import 'pattern_lock_screen.dart';
+import 'package:secret_chat/chat/models/room_creation_data.dart';
+import 'package:secret_chat/chat/models/room_info.dart';
+import 'package:secret_chat/screens/pattern_lock_screen.dart';
+import 'package:secret_chat/widgets/app_logo_title.dart';
 
 class CreateRoomScreen extends StatefulWidget {
   const CreateRoomScreen({super.key});

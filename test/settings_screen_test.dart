@@ -3,9 +3,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:secret_chat/screens/settings_screen.dart';
 import 'package:secret_chat/security/app_lock_controller.dart';
 import 'package:secret_chat/security/app_lock_service.dart';
-import 'package:secret_chat/screens/settings_screen.dart';
 import 'package:secret_chat/settings/default_room_listening_controller.dart';
 import 'package:secret_chat/settings/network_privacy_controller.dart';
 import 'package:secret_chat/settings/theme_controller.dart';

@@ -3,10 +3,10 @@
 
 import 'package:flutter/material.dart';
 
-import '../chat/models/network_user_info.dart';
-import '../chat/models/room_info.dart';
-import 'models/active_room_item.dart';
-import '../widgets/app_logo_title.dart';
+import 'package:secret_chat/chat/models/network_user_info.dart';
+import 'package:secret_chat/chat/models/room_info.dart';
+import 'package:secret_chat/screens/models/active_room_item.dart';
+import 'package:secret_chat/widgets/app_logo_title.dart';
 
 class NetworkOverviewScreen extends StatelessWidget {
   const NetworkOverviewScreen({
