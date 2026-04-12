@@ -35,6 +35,13 @@ void main() {
                 unreadCount: 1,
               ),
             ],
+            activeUserChats: const <ActiveRoomItem>[
+              ActiveRoomItem(
+                key: 'chat-1',
+                roomName: 'Charlie',
+                unreadCount: 0,
+              ),
+            ],
             discoveredRooms: <RoomInfo>[],
             networkUsers: const <NetworkUserInfo>[pendingUser],
             onBack: () {},
@@ -51,8 +58,11 @@ void main() {
       );
 
       expect(find.text('Users currently on network'), findsOneWidget);
+      expect(find.text('Chats with users'), findsOneWidget);
       expect(find.text('Bob'), findsOneWidget);
+      expect(find.text('Charlie'), findsOneWidget);
       expect(find.text('2'), findsOneWidget);
+      expect(find.text('Unread messages: 1'), findsNothing);
 
       await tester.tap(find.text('Bob'));
       await tester.pump();
@@ -84,6 +94,7 @@ void main() {
           isHostNetworkMode: true,
           status: null,
           activeRooms: const <ActiveRoomItem>[],
+          activeUserChats: const <ActiveRoomItem>[],
           discoveredRooms: <RoomInfo>[],
           networkUsers: const <NetworkUserInfo>[pendingDotUser],
           onBack: () {},
@@ -99,4 +110,45 @@ void main() {
     expect(find.text('ID chat off'), findsNothing);
     expect(find.text('0'), findsNothing);
   });
+
+  testWidgets(
+    'Network Overview keeps active-chat users out of network users list',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: NetworkOverviewScreen(
+            userName: 'Alice',
+            isHostNetworkMode: false,
+            status: 'Connected',
+            activeRooms: const <ActiveRoomItem>[],
+            activeUserChats: const <ActiveRoomItem>[
+              ActiveRoomItem(
+                key: 'chat-1',
+                roomName: 'Bob',
+                unreadCount: 3,
+              ),
+            ],
+            discoveredRooms: <RoomInfo>[],
+            networkUsers: const <NetworkUserInfo>[
+              NetworkUserInfo(
+                userId: 'u-3',
+                displayName: 'Carol',
+              ),
+            ],
+            onBack: () {},
+            onOpenSettings: () {},
+            onOpenRooms: () {},
+            onOpenActiveRoom: (_) {},
+            onOpenUserChat: (_) {},
+          ),
+        ),
+      );
+
+      // Bob appears in active chats only, while the network users list
+      // contains Carol.
+      expect(find.text('Bob'), findsOneWidget);
+      expect(find.text('Carol'), findsOneWidget);
+      expect(find.text('3'), findsOneWidget);
+    },
+  );
 }

@@ -15,6 +15,7 @@ class NetworkOverviewScreen extends StatelessWidget {
     required this.isHostNetworkMode,
     required this.status,
     required this.activeRooms,
+    required this.activeUserChats,
     required this.discoveredRooms,
     required this.networkUsers,
     required this.onBack,
@@ -28,6 +29,7 @@ class NetworkOverviewScreen extends StatelessWidget {
   final bool isHostNetworkMode;
   final String? status;
   final List<ActiveRoomItem> activeRooms;
+  final List<ActiveRoomItem> activeUserChats;
   final List<RoomInfo> discoveredRooms;
   final List<NetworkUserInfo> networkUsers;
   final VoidCallback onBack;
@@ -35,6 +37,26 @@ class NetworkOverviewScreen extends StatelessWidget {
   final VoidCallback onOpenRooms;
   final ValueChanged<ActiveRoomItem> onOpenActiveRoom;
   final ValueChanged<NetworkUserInfo> onOpenUserChat;
+
+  Widget _unreadBadge(BuildContext context, int count) {
+    final String label = count > 99 ? '99+' : '$count';
+    return Container(
+      width: label.length > 2 ? 34 : 24,
+      height: 24,
+      decoration: BoxDecoration(
+        color: Colors.green,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,12 +117,36 @@ class NetworkOverviewScreen extends StatelessWidget {
                 child: ListTile(
                   leading: const Icon(Icons.chat_bubble_outline),
                   title: Text(room.roomName),
-                  subtitle: Text(
-                    room.unreadCount > 0
-                        ? 'Unread messages: ${room.unreadCount}'
-                        : 'No unread messages',
-                  ),
+                  trailing: room.unreadCount > 0
+                      ? _unreadBadge(context, room.unreadCount)
+                      : null,
                   onTap: () => onOpenActiveRoom(room),
+                ),
+              ),
+            ),
+          const SizedBox(height: 16),
+          Text(
+            'Chats with users',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          if (activeUserChats.isEmpty)
+            const Card(
+              child: Padding(
+                padding: EdgeInsets.all(12),
+                child: Text('No active user chats.'),
+              ),
+            )
+          else
+            ...activeUserChats.map(
+              (ActiveRoomItem chat) => Card(
+                child: ListTile(
+                  leading: const Icon(Icons.person_outline),
+                  title: Text(chat.roomName),
+                  trailing: chat.unreadCount > 0
+                      ? _unreadBadge(context, chat.unreadCount)
+                      : null,
+                  onTap: () => onOpenActiveRoom(chat),
                 ),
               ),
             ),

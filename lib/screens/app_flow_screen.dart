@@ -118,6 +118,29 @@ class _AppFlowScreenState extends State<AppFlowScreen>
         .toList();
   }
 
+  List<ActiveRoomItem> get _overviewUserChats {
+    final List<ActiveRoomItem> chats = _activeRooms
+        .where((ActiveRoomItem room) => _isDirectRoomName(room.roomName))
+        .map((ActiveRoomItem room) {
+          final String preferredTitle = _roomTitleByKey[room.key]?.trim() ?? '';
+          final String token = _directPeerToken(room.roomName);
+          final String title = preferredTitle.isNotEmpty
+              ? preferredTitle
+              : (token.isNotEmpty ? token : room.roomName);
+          return ActiveRoomItem(
+            key: room.key,
+            roomName: title,
+            unreadCount: room.unreadCount,
+            listenOnLeave: room.listenOnLeave,
+          );
+        })
+        .toList()
+      ..sort(
+        (a, b) => a.roomName.toLowerCase().compareTo(b.roomName.toLowerCase()),
+      );
+    return chats;
+  }
+
   List<ActiveRoomItem> get _roomsActiveRooms => _overviewActiveRooms;
 
   List<NetworkUserInfo> get _networkUsers {
@@ -174,6 +197,13 @@ class _AppFlowScreenState extends State<AppFlowScreen>
         0,
         (int total, ActiveRoomItem active) => total + active.unreadCount,
       );
+
+      if (directRoomsForUser.isNotEmpty) {
+        // Active direct chats are shown in a dedicated section above the
+        // network user list and should not be duplicated below.
+        continue;
+      }
+
       final bool hasPending =
           pendingDirectSenderIds.contains(userKey) &&
               directRoomsForUser.isEmpty ||
@@ -870,6 +900,7 @@ class _AppFlowScreenState extends State<AppFlowScreen>
           isHostNetworkMode: _isHostNetworkMode,
           status: _discoveryController.status,
           activeRooms: _overviewActiveRooms,
+          activeUserChats: _overviewUserChats,
           discoveredRooms: _visibleDiscoveredRooms,
           networkUsers: _networkUsers,
           onBack: () {

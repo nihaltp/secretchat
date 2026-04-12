@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Secret Chat Contributors
 
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:secret_chat/chat/controllers/lan_chat_controller.dart';
@@ -20,8 +21,9 @@ Future<void> _waitFor(bool Function() predicate, {Duration timeout = const Durat
 
 void main() {
   test('highest-battery device takes over when host leaves and host can rejoin with prior history', () async {
-    const int testChatPort = 48761;
-    const int testDiscoveryPort = 48760;
+    final int basePort = 50000 + Random.secure().nextInt(1000) * 2;
+    final int testDiscoveryPort = basePort;
+    final int testChatPort = basePort + 1;
 
     final LanChatController host = LanChatController(
       batteryLevelProvider: () async => 20,
