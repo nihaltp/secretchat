@@ -105,7 +105,7 @@ class LanChatController extends ChangeNotifier {
     }
   }
 
-  Future<String>? _pendingLocalUserIdFuture;
+  static Future<String>? _pendingLocalUserIdFuture;
   
   Future<String> _loadOrCreateLocalUserId() {
     if (_pendingLocalUserIdFuture != null) {
