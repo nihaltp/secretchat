@@ -66,10 +66,12 @@ class _AppFlowScreenState extends State<AppFlowScreen>
   String _userName = '';
   bool _isWifiConnected = false;
   bool _isHostNetworkMode = false;
+  bool _hasChosenNetworkMode = false;
   bool _lockOverlayVisible = false;
   String? _activeRoomKey;
 
-  bool get _canAccessRooms => _isWifiConnected || _isHostNetworkMode;
+  bool get _canAccessRooms =>
+      _hasChosenNetworkMode && (_isWifiConnected || _isHostNetworkMode);
 
   bool _isDirectRoomName(String roomName) {
     return isDirectChatRoomName(roomName);
@@ -518,6 +520,7 @@ class _AppFlowScreenState extends State<AppFlowScreen>
   }
 
   void _openSettings() {
+    final bool canOpenUserOrRooms = _hasChosenNetworkMode;
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => SettingsScreen(
@@ -525,8 +528,10 @@ class _AppFlowScreenState extends State<AppFlowScreen>
           appLockController: widget.appLockController,
           defaultRoomListeningController: widget.defaultRoomListeningController,
           networkPrivacyController: widget.networkPrivacyController,
-          onOpenNetworkOverview: _openNetworkOverviewFromBottomNav,
-          onOpenRooms: _openRoomsFromBottomNav,
+          onOpenNetworkOverview: canOpenUserOrRooms
+              ? _openNetworkOverviewFromBottomNav
+              : null,
+          onOpenRooms: canOpenUserOrRooms ? _openRoomsFromBottomNav : null,
           onOpenSettings: () {},
         ),
       ),
@@ -573,6 +578,7 @@ class _AppFlowScreenState extends State<AppFlowScreen>
     }
 
     setState(() {
+      _hasChosenNetworkMode = true;
       _isHostNetworkMode = true;
       _stage = AppStage.networkOverview;
     });
@@ -589,6 +595,7 @@ class _AppFlowScreenState extends State<AppFlowScreen>
     _userName = userName;
     await _saveDisplayName(userName);
     setState(() {
+      _hasChosenNetworkMode = true;
       _isHostNetworkMode = false;
       _stage = AppStage.networkOverview;
     });
@@ -607,6 +614,10 @@ class _AppFlowScreenState extends State<AppFlowScreen>
   }
 
   void _openNetworkOverviewFromBottomNav() {
+    if (!_hasChosenNetworkMode) {
+      _showSnack('Choose Host Network or Use Wi-Fi first.');
+      return;
+    }
     if (!mounted) {
       return;
     }
@@ -616,6 +627,10 @@ class _AppFlowScreenState extends State<AppFlowScreen>
   }
 
   void _openRoomsFromBottomNav() {
+    if (!_hasChosenNetworkMode) {
+      _showSnack('Choose Host Network or Use Wi-Fi first.');
+      return;
+    }
     if (!mounted) {
       return;
     }
