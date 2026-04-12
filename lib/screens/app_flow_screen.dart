@@ -124,6 +124,8 @@ class _AppFlowScreenState extends State<AppFlowScreen>
     final String localId = _discoveryController.localUserId ?? '';
     final Map<String, NetworkUserInfo> usersById = <String, NetworkUserInfo>{};
     final Set<String> pendingDirectSenderIds = <String>{};
+    final Map<String, Set<String>> directRoomKeysBySenderId =
+        <String, Set<String>>{};
 
     for (final RoomInfo room in _discoveryController.discoveredRooms) {
       if (!isDirectChatRoomTargetedToUser(
@@ -137,13 +139,20 @@ class _AppFlowScreenState extends State<AppFlowScreen>
       final String senderId = room.hostUserId.trim().isNotEmpty
           ? room.hostUserId.trim()
           : '${room.hostAddress.address}:${room.hostName}';
-      pendingDirectSenderIds.add(senderId.toLowerCase());
+      final String senderKey = senderId.toLowerCase();
+      pendingDirectSenderIds.add(senderKey);
+      directRoomKeysBySenderId.putIfAbsent(senderKey, () => <String>{}).add(
+        room.key.toLowerCase(),
+      );
     }
 
     for (final RoomInfo room in _discoveryController.discoveredRooms) {
       final String userId = room.hostUserId.trim().isEmpty
           ? '${room.hostAddress.address}:${room.hostName}'
           : room.hostUserId.trim();
+      final String userKey = userId.toLowerCase();
+      final Set<String> knownDirectRoomKeys =
+          directRoomKeysBySenderId[userKey] ?? <String>{};
 
       final List<ActiveRoomItem> directRoomsForUser = _activeRooms.where((
         ActiveRoomItem active,
@@ -151,8 +160,13 @@ class _AppFlowScreenState extends State<AppFlowScreen>
         if (!_isDirectRoomName(active.roomName)) {
           return false;
         }
+        // Joining sender-hosted pending rooms keeps the discovery room key,
+        // so key match is required to clear dot state after opening chat.
+        if (knownDirectRoomKeys.contains(active.key.toLowerCase())) {
+          return true;
+        }
         final String token = _directPeerToken(active.roomName).toLowerCase();
-        return token == userId.toLowerCase() ||
+        return token == userKey ||
             token == room.hostName.toLowerCase();
       }).toList();
 
@@ -161,7 +175,7 @@ class _AppFlowScreenState extends State<AppFlowScreen>
         (int total, ActiveRoomItem active) => total + active.unreadCount,
       );
       final bool hasPending =
-          pendingDirectSenderIds.contains(userId.toLowerCase()) &&
+          pendingDirectSenderIds.contains(userKey) &&
               directRoomsForUser.isEmpty ||
           pendingCount > 0;
 
