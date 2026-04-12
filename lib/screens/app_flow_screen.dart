@@ -118,25 +118,28 @@ class _AppFlowScreenState extends State<AppFlowScreen>
   }
 
   List<ActiveRoomItem> get _overviewUserChats {
-    final List<ActiveRoomItem> chats = _activeRooms
-        .where((ActiveRoomItem room) => _isDirectRoomName(room.roomName))
-        .map((ActiveRoomItem room) {
-          final String preferredTitle = _roomTitleByKey[room.key]?.trim() ?? '';
-          final String token = _directPeerToken(room.roomName);
-          final String title = preferredTitle.isNotEmpty
-              ? preferredTitle
-              : (token.isNotEmpty ? token : room.roomName);
-          return ActiveRoomItem(
-            key: room.key,
-            roomName: title,
-            unreadCount: room.unreadCount,
-            listenOnLeave: room.listenOnLeave,
+    final List<ActiveRoomItem> chats =
+        _activeRooms
+            .where((ActiveRoomItem room) => _isDirectRoomName(room.roomName))
+            .map((ActiveRoomItem room) {
+              final String preferredTitle =
+                  _roomTitleByKey[room.key]?.trim() ?? '';
+              final String token = _directPeerToken(room.roomName);
+              final String title = preferredTitle.isNotEmpty
+                  ? preferredTitle
+                  : (token.isNotEmpty ? token : room.roomName);
+              return ActiveRoomItem(
+                key: room.key,
+                roomName: title,
+                unreadCount: room.unreadCount,
+                listenOnLeave: room.listenOnLeave,
+              );
+            })
+            .toList()
+          ..sort(
+            (a, b) =>
+                a.roomName.toLowerCase().compareTo(b.roomName.toLowerCase()),
           );
-        })
-        .toList()
-      ..sort(
-        (a, b) => a.roomName.toLowerCase().compareTo(b.roomName.toLowerCase()),
-      );
     return chats;
   }
 
@@ -163,9 +166,9 @@ class _AppFlowScreenState extends State<AppFlowScreen>
           : '${room.hostAddress.address}:${room.hostName}';
       final String senderKey = senderId.toLowerCase();
       pendingDirectSenderIds.add(senderKey);
-      directRoomKeysBySenderId.putIfAbsent(senderKey, () => <String>{}).add(
-        room.key.toLowerCase(),
-      );
+      directRoomKeysBySenderId
+          .putIfAbsent(senderKey, () => <String>{})
+          .add(room.key.toLowerCase());
     }
 
     for (final RoomInfo room in _discoveryController.discoveredRooms) {
@@ -188,8 +191,7 @@ class _AppFlowScreenState extends State<AppFlowScreen>
           return true;
         }
         final String token = _directPeerToken(active.roomName).toLowerCase();
-        return token == userKey ||
-            token == room.hostName.toLowerCase();
+        return token == userKey || token == room.hostName.toLowerCase();
       }).toList();
 
       final int pendingCount = directRoomsForUser.fold<int>(
@@ -237,7 +239,8 @@ class _AppFlowScreenState extends State<AppFlowScreen>
     for (final MapEntry<String, LanChatController> entry
         in _roomControllersByKey.entries) {
       final LanChatController controller = entry.value;
-      if (controller.mode == ChatMode.idle) {
+      if (controller.mode != ChatMode.hosting &&
+          controller.mode != ChatMode.connected) {
         continue;
       }
       result.add(
@@ -254,9 +257,10 @@ class _AppFlowScreenState extends State<AppFlowScreen>
 
   List<RoomInfo> get _visibleDiscoveredRooms {
     final Set<String> activeRoomNames = _roomControllersByKey.values
-        .where(
-          (LanChatController controller) => controller.mode != ChatMode.idle,
-        )
+        .where((LanChatController controller) {
+          return controller.mode == ChatMode.hosting ||
+              controller.mode == ChatMode.connected;
+        })
         .map(
           (LanChatController controller) =>
               (controller.roomName ?? '').trim().toLowerCase(),
@@ -775,7 +779,11 @@ class _AppFlowScreenState extends State<AppFlowScreen>
           _roomTitleByKey[roomKey] = roomTitle;
         }
         _listenOnLeaveByRoomKey[roomKey] = _defaultListenOnLeave();
-        _openRoom(roomKey);
+        // Intentional UX: secured joins stay on Rooms until host admission is
+        // confirmed. This prevents revealing whether a credential guess worked.
+        if (!room.requiresSecurity || isDirectChat) {
+          _openRoom(roomKey);
+        }
       });
     } else {
       _showSnack(roomController.status ?? 'Unable to join room.');

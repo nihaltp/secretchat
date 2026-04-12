@@ -20,7 +20,6 @@ part 'lan_chat_controller_network.dart';
 part 'lan_chat_controller_types.dart';
 
 class LanChatController extends ChangeNotifier {
-
   LanChatController({
     Future<int> Function()? batteryLevelProvider,
     Future<String> Function()? localUserIdProvider,
@@ -350,14 +349,7 @@ class LanChatController extends ChangeNotifier {
     String? securityValue,
     bool preserveLocalState = false,
   }) async {
-    if (room.requiresSecurity) {
-      final String provided = securityValue?.trim() ?? '';
-      final String expected = room.securityValue?.trim() ?? '';
-      if (provided.isEmpty || provided != expected) {
-        setStatus('Security check failed. Wrong password/PIN/pattern.');
-        return false;
-      }
-    }
+    final String normalizedSecurityValue = securityValue?.trim() ?? '';
 
     if (!preserveLocalState) {
       await disconnect();
@@ -371,7 +363,7 @@ class LanChatController extends ChangeNotifier {
     _roomHidden = room.hidden;
     _roomHistoryEnabled = room.historyEnabled;
     _roomSecurityType = room.securityType;
-    _roomSecurityValue = room.securityValue;
+    _roomSecurityValue = room.requiresSecurity ? normalizedSecurityValue : null;
     _joinedRoomHistoryEnabled = room.historyEnabled;
     _hostHistoryEnabled = false;
     _awaitingFailover = false;
@@ -397,7 +389,7 @@ class LanChatController extends ChangeNotifier {
     try {
       final Socket socket = await Socket.connect(room.hostAddress, room.port);
       _serverConnection = socket;
-      mode = ChatMode.connected;
+      mode = room.requiresSecurity ? ChatMode.connecting : ChatMode.connected;
       if (!preserveLocalState) {
         _participantsById.clear();
       }
@@ -419,6 +411,7 @@ class LanChatController extends ChangeNotifier {
         'type': 'join',
         'senderId': localUserId,
         'name': localUserName,
+        'securityValue': normalizedSecurityValue,
         'batteryLevel': await _readBatteryLevel(),
         'eventTimestamp': DateTime.now().toIso8601String(),
       });
@@ -430,9 +423,21 @@ class LanChatController extends ChangeNotifier {
           .listen(
             _onServerLine,
             onDone: () {
+              if (mode == ChatMode.connecting) {
+                _serverConnection = null;
+                mode = ChatMode.idle;
+                _notify();
+                return;
+              }
               unawaited(_handleHostDisconnected());
             },
             onError: (Object error) {
+              if (mode == ChatMode.connecting) {
+                _serverConnection = null;
+                mode = ChatMode.idle;
+                _notify();
+                return;
+              }
               unawaited(
                 _handleHostDisconnected(reason: 'Socket error: $error'),
               );
@@ -440,7 +445,9 @@ class LanChatController extends ChangeNotifier {
           );
 
       _startBatteryUpdates();
-      _addSystemMessage('Connected to room "$roomName".');
+      if (!room.requiresSecurity) {
+        _addSystemMessage('Connected to room "$roomName".');
+      }
       _notify();
       return true;
     } catch (e) {
@@ -766,9 +773,7 @@ class LanChatController extends ChangeNotifier {
             'hostAllowsIdChat': true,
             'historyEnabled': _hostHistoryEnabled,
             'securityType': roomSecurityTypeToWire(_hostSecurityType),
-            'securityValue': _hostSecurityType == RoomSecurityType.none
-                ? null
-                : _hostSecurityValue,
+            'securityValue': null,
           }),
         );
         sender.send(bytes, InternetAddress('255.255.255.255'), _discoveryPort);
@@ -824,6 +829,24 @@ class LanChatController extends ChangeNotifier {
 
       final String type = (decoded['type'] ?? '').toString();
       if (type == 'join') {
+        if (_hostSecurityType != RoomSecurityType.none) {
+          final String provided = (decoded['securityValue'] ?? '')
+              .toString()
+              .trim();
+          final String expected = _hostSecurityValue?.trim() ?? '';
+          if (provided.isEmpty || provided != expected) {
+            // Intentionally deny without participant side effects.
+            // The client intentionally handles this denial silently.
+            _sendLine(peer.socket, <String, dynamic>{
+              'type': 'joinDenied',
+              'reason': 'invalidSecurity',
+            });
+            _clients.remove(peerId);
+            unawaited(peer.socket.close());
+            return;
+          }
+        }
+
         final DateTime eventTime =
             DateTime.tryParse((decoded['eventTimestamp'] ?? '').toString()) ??
             DateTime.now();
@@ -846,6 +869,8 @@ class LanChatController extends ChangeNotifier {
           _markPresenceJoined(peer.userId!, at: eventTime);
           _requestHistorySyncForPeer(peer);
         }
+        // Host-authoritative admission: explicitly acknowledge successful join.
+        _sendLine(peer.socket, <String, dynamic>{'type': 'joinAccepted'});
         _broadcastParticipants();
         final DateTime systemEventTime = DateTime.now();
         _broadcastSystemEvent(
@@ -896,7 +921,6 @@ class LanChatController extends ChangeNotifier {
         );
         return;
       }
-
       if (type == 'chat') {
         final Map<String, dynamic> packet = _buildHostChatPacket(
           senderId: peer.userId ?? peer.id,
@@ -1136,6 +1160,24 @@ class LanChatController extends ChangeNotifier {
             _participantsById[userId] = state;
             _syncPresenceFromParticipant(state);
           }
+        }
+        return;
+      }
+      if (type == 'joinDenied') {
+        // Intentionally silent UX: do not reveal whether a guessed credential
+        // was accepted or rejected. If denied, we just return to idle state.
+        // This is intentional and should not be changed without a product decision.
+        status = null;
+        _serverConnection = null;
+        mode = ChatMode.idle;
+        _notify();
+        return;
+      }
+      if (type == 'joinAccepted') {
+        if (mode == ChatMode.connecting) {
+          mode = ChatMode.connected;
+          _addSystemMessage('Connected to room "$roomName".');
+          _notify();
         }
         return;
       }

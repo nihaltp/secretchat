@@ -3,7 +3,7 @@
 
 part of 'lan_chat_controller.dart';
 
-enum ChatMode { idle, hosting, connected }
+enum ChatMode { idle, connecting, hosting, connected }
 
 class _ClientPeer {
   _ClientPeer({required this.socket, required this.id, required this.name});
