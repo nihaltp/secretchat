@@ -10,14 +10,18 @@ class HomeScreen extends StatefulWidget {
     super.key,
     required this.onHostPressed,
     required this.onWifiPressed,
-    required this.onOpenSettings,
+    this.onOpenNetworkOverview,
+    this.onOpenRooms,
+    this.onOpenSettings,
     this.initialDisplayName,
     this.onDisplayNameChanged,
   });
 
   final ValueChanged<String> onHostPressed;
   final ValueChanged<String> onWifiPressed;
-  final VoidCallback onOpenSettings;
+  final VoidCallback? onOpenNetworkOverview;
+  final VoidCallback? onOpenRooms;
+  final VoidCallback? onOpenSettings;
   final String? initialDisplayName;
   final ValueChanged<String>? onDisplayNameChanged;
 
@@ -63,16 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const AppLogoTitle('Secret Chat'),
-        actions: [
-          IconButton(
-            tooltip: 'Settings',
-            onPressed: widget.onOpenSettings,
-            icon: const Icon(Icons.settings),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const AppLogoTitle('Secret Chat')),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (BuildContext context, BoxConstraints constraints) {
@@ -141,6 +136,38 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             );
           },
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: Row(
+          children: [
+            Expanded(
+              // Intentionally icon-only: labels are omitted to avoid crowding
+              // on narrow screens while keeping primary navigation accessible.
+              child: FilledButton(
+                key: const Key('bottom_nav_user_button'),
+                onPressed: widget.onOpenNetworkOverview,
+                child: const Icon(Icons.person_outline),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton.tonal(
+                key: const Key('bottom_nav_room_button'),
+                onPressed: widget.onOpenRooms,
+                child: const Icon(Icons.meeting_room),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton.tonal(
+                key: const Key('bottom_nav_settings_button'),
+                onPressed: widget.onOpenSettings,
+                child: const Icon(Icons.settings),
+              ),
+            ),
+          ],
         ),
       ),
     );

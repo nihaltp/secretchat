@@ -16,12 +16,18 @@ class SettingsScreen extends StatelessWidget {
     required this.appLockController,
     required this.defaultRoomListeningController,
     required this.networkPrivacyController,
+    this.onOpenNetworkOverview,
+    this.onOpenRooms,
+    this.onOpenSettings,
   });
 
   final ThemeController themeController;
   final AppLockController appLockController;
   final DefaultRoomListeningController defaultRoomListeningController;
   final NetworkPrivacyController networkPrivacyController;
+  final VoidCallback? onOpenNetworkOverview;
+  final VoidCallback? onOpenRooms;
+  final VoidCallback? onOpenSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -37,8 +43,25 @@ class SettingsScreen extends StatelessWidget {
                 return AnimatedBuilder(
                   animation: networkPrivacyController,
                   builder: (BuildContext context, _) {
+                    void openUsers() {
+                      Navigator.of(context).pop();
+                      onOpenNetworkOverview?.call();
+                    }
+
+                    void openRooms() {
+                      Navigator.of(context).pop();
+                      onOpenRooms?.call();
+                    }
+
+                    void openSettings() {
+                      onOpenSettings?.call();
+                    }
+
                     return Scaffold(
-                      appBar: AppBar(title: const AppLogoTitle('Settings')),
+                      appBar: AppBar(
+                        automaticallyImplyLeading: false,
+                        title: const AppLogoTitle('Settings'),
+                      ),
                       body: ListView(
                         padding: const EdgeInsets.all(16),
                         children: [
@@ -108,6 +131,40 @@ class SettingsScreen extends StatelessWidget {
                             },
                           ),
                         ],
+                      ),
+                      bottomNavigationBar: SafeArea(
+                        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              // Intentionally icon-only: labels are omitted to avoid crowding
+                              // on narrow screens while keeping primary navigation accessible.
+                              child: FilledButton(
+                                key: const Key('bottom_nav_user_button'),
+                                onPressed: onOpenNetworkOverview == null
+                                    ? null
+                                    : openUsers,
+                                child: const Icon(Icons.person_outline),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: FilledButton.tonal(
+                                key: const Key('bottom_nav_room_button'),
+                                onPressed: onOpenRooms == null ? null : openRooms,
+                                child: const Icon(Icons.meeting_room),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: FilledButton.tonal(
+                                key: const Key('bottom_nav_settings_button'),
+                                onPressed: openSettings,
+                                child: const Icon(Icons.settings),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },

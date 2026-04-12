@@ -14,6 +14,9 @@ void main() {
     (WidgetTester tester) async {
       NetworkUserInfo? tappedUser;
       ActiveRoomItem? tappedRoom;
+      int openUsersTapped = 0;
+      int openRoomsTapped = 0;
+      int openSettingsTapped = 0;
       const NetworkUserInfo pendingUser = NetworkUserInfo(
         userId: 'u-2',
         displayName: 'Bob',
@@ -36,16 +39,19 @@ void main() {
               ),
             ],
             activeUserChats: const <ActiveRoomItem>[
-              ActiveRoomItem(
-                key: 'chat-1',
-                roomName: 'Charlie',
-              ),
+              ActiveRoomItem(key: 'chat-1', roomName: 'Charlie'),
             ],
             discoveredRooms: const <RoomInfo>[],
             networkUsers: const <NetworkUserInfo>[pendingUser],
-            onBack: () {},
-            onOpenSettings: () {},
-            onOpenRooms: () {},
+            onOpenNetworkOverview: () {
+              openUsersTapped += 1;
+            },
+            onOpenSettings: () {
+              openSettingsTapped += 1;
+            },
+            onOpenRooms: () {
+              openRoomsTapped += 1;
+            },
             onOpenActiveRoom: (ActiveRoomItem room) {
               tappedRoom = room;
             },
@@ -72,6 +78,18 @@ void main() {
       await tester.pump();
 
       expect(tappedRoom?.key, 'room-1');
+
+      await tester.tap(find.byKey(const Key('bottom_nav_user_button')));
+      await tester.pump();
+      expect(openUsersTapped, 1);
+
+      await tester.tap(find.byKey(const Key('bottom_nav_room_button')));
+      await tester.pump();
+      expect(openRoomsTapped, 1);
+
+      await tester.tap(find.byKey(const Key('bottom_nav_settings_button')));
+      await tester.pump();
+      expect(openSettingsTapped, 1);
     },
   );
 
@@ -95,7 +113,7 @@ void main() {
           activeUserChats: const <ActiveRoomItem>[],
           discoveredRooms: const <RoomInfo>[],
           networkUsers: const <NetworkUserInfo>[pendingDotUser],
-          onBack: () {},
+          onOpenNetworkOverview: () {},
           onOpenSettings: () {},
           onOpenRooms: () {},
           onOpenActiveRoom: (_) {},
@@ -120,20 +138,13 @@ void main() {
             status: 'Connected',
             activeRooms: const <ActiveRoomItem>[],
             activeUserChats: const <ActiveRoomItem>[
-              ActiveRoomItem(
-                key: 'chat-1',
-                roomName: 'Bob',
-                unreadCount: 3,
-              ),
+              ActiveRoomItem(key: 'chat-1', roomName: 'Bob', unreadCount: 3),
             ],
             discoveredRooms: const <RoomInfo>[],
             networkUsers: const <NetworkUserInfo>[
-              NetworkUserInfo(
-                userId: 'u-3',
-                displayName: 'Carol',
-              ),
+              NetworkUserInfo(userId: 'u-3', displayName: 'Carol'),
             ],
-            onBack: () {},
+            onOpenNetworkOverview: () {},
             onOpenSettings: () {},
             onOpenRooms: () {},
             onOpenActiveRoom: (_) {},

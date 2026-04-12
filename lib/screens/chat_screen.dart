@@ -15,7 +15,9 @@ class ChatScreen extends StatefulWidget {
     required this.listenOnLeave,
     required this.onListenOnLeaveChanged,
     required this.onLeave,
-    required this.onOpenSettings,
+    this.onOpenNetworkOverview,
+    this.onOpenRooms,
+    this.onOpenSettings,
   });
 
   final LanChatController controller;
@@ -23,7 +25,9 @@ class ChatScreen extends StatefulWidget {
   final bool listenOnLeave;
   final ValueChanged<bool> onListenOnLeaveChanged;
   final VoidCallback onLeave;
-  final VoidCallback onOpenSettings;
+  final VoidCallback? onOpenNetworkOverview;
+  final VoidCallback? onOpenRooms;
+  final VoidCallback? onOpenSettings;
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -106,11 +110,6 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         title: AppLogoTitle(widget.title ?? controller.roomName ?? 'Room Chat'),
         actions: [
-          IconButton(
-            tooltip: 'Settings',
-            onPressed: widget.onOpenSettings,
-            icon: const Icon(Icons.settings),
-          ),
           IconButton(
             tooltip: widget.listenOnLeave
                 ? 'Listening on leave: On'
@@ -271,6 +270,38 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: Row(
+          children: [
+            Expanded(
+              // Intentionally icon-only: labels are omitted to avoid crowding
+              // on narrow screens while keeping primary navigation accessible.
+              child: FilledButton(
+                key: const Key('bottom_nav_user_button'),
+                onPressed: widget.onOpenNetworkOverview,
+                child: const Icon(Icons.person_outline),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton.tonal(
+                key: const Key('bottom_nav_room_button'),
+                onPressed: widget.onOpenRooms,
+                child: const Icon(Icons.meeting_room),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton.tonal(
+                key: const Key('bottom_nav_settings_button'),
+                onPressed: widget.onOpenSettings,
+                child: const Icon(Icons.settings),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

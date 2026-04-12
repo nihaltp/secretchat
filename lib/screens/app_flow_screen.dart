@@ -525,6 +525,9 @@ class _AppFlowScreenState extends State<AppFlowScreen>
           appLockController: widget.appLockController,
           defaultRoomListeningController: widget.defaultRoomListeningController,
           networkPrivacyController: widget.networkPrivacyController,
+          onOpenNetworkOverview: _openNetworkOverviewFromBottomNav,
+          onOpenRooms: _openRoomsFromBottomNav,
+          onOpenSettings: () {},
         ),
       ),
     );
@@ -601,6 +604,40 @@ class _AppFlowScreenState extends State<AppFlowScreen>
       _stage = AppStage.rooms;
       unawaited(_syncNetworkPresence());
     });
+  }
+
+  void _openNetworkOverviewFromBottomNav() {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _stage = AppStage.networkOverview;
+    });
+  }
+
+  void _openRoomsFromBottomNav() {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _stage = AppStage.rooms;
+    });
+  }
+
+  void _openUserChatsFromOverview() {
+    if (_overviewUserChats.isNotEmpty) {
+      setState(() {
+        _openRoom(_overviewUserChats.first.key);
+      });
+      return;
+    }
+
+    if (_networkUsers.isNotEmpty) {
+      unawaited(_openUserChat(_networkUsers.first));
+      return;
+    }
+
+    _showSnack('No users available for direct chat yet.');
   }
 
   Future<void> _openUserChat(NetworkUserInfo user) async {
@@ -892,6 +929,10 @@ class _AppFlowScreenState extends State<AppFlowScreen>
         screen = HomeScreen(
           onHostPressed: _onHostNetworkSelected,
           onWifiPressed: _onUseWifiSelected,
+          // Intentionally disabled on first screen until host/wifi mode is chosen.
+          // This avoids entering user/room flows before network mode is established.
+          onOpenNetworkOverview: null,
+          onOpenRooms: null,
           onOpenSettings: _openSettings,
           initialDisplayName: _userName,
           onDisplayNameChanged: (String value) {
@@ -910,13 +951,9 @@ class _AppFlowScreenState extends State<AppFlowScreen>
           activeUserChats: _overviewUserChats,
           discoveredRooms: _visibleDiscoveredRooms,
           networkUsers: _networkUsers,
-          onBack: () {
-            setState(() {
-              _stage = AppStage.home;
-            });
-          },
-          onOpenSettings: _openSettings,
+          onOpenNetworkOverview: _openNetworkOverviewFromBottomNav,
           onOpenRooms: _openRoomsFromOverview,
+          onOpenSettings: _openSettings,
           onOpenActiveRoom: (ActiveRoomItem room) {
             _openRoom(room.key);
           },
@@ -932,11 +969,6 @@ class _AppFlowScreenState extends State<AppFlowScreen>
           status: _discoveryController.status,
           activeRooms: _roomsActiveRooms,
           activeRoomKey: _activeRoomKey,
-          onBack: () {
-            setState(() {
-              _stage = AppStage.networkOverview;
-            });
-          },
           onResumeActiveRoom: (String roomKey) {
             if (!_roomControllersByKey.containsKey(roomKey)) {
               return;
@@ -946,6 +978,8 @@ class _AppFlowScreenState extends State<AppFlowScreen>
             });
           },
           onDisconnectActiveRoom: _disconnectActiveRoomFromRooms,
+          onOpenNetworkOverview: _openNetworkOverviewFromBottomNav,
+          onOpenRooms: _openRoomsFromBottomNav,
           onOpenSettings: _openSettings,
           onRefresh: _discoveryController.startDiscovery,
           onCreateRoom: _createRoom,
@@ -973,11 +1007,6 @@ class _AppFlowScreenState extends State<AppFlowScreen>
             status: _discoveryController.status,
             activeRooms: _roomsActiveRooms,
             activeRoomKey: _activeRoomKey,
-            onBack: () {
-              setState(() {
-                _stage = AppStage.networkOverview;
-              });
-            },
             onResumeActiveRoom: (String roomKey) {
               if (!_roomControllersByKey.containsKey(roomKey)) {
                 return;
@@ -987,6 +1016,8 @@ class _AppFlowScreenState extends State<AppFlowScreen>
               });
             },
             onDisconnectActiveRoom: _disconnectActiveRoomFromRooms,
+            onOpenNetworkOverview: _openNetworkOverviewFromBottomNav,
+            onOpenRooms: _openRoomsFromBottomNav,
             onOpenSettings: _openSettings,
             onRefresh: _discoveryController.startDiscovery,
             onCreateRoom: _createRoom,
@@ -1017,6 +1048,8 @@ class _AppFlowScreenState extends State<AppFlowScreen>
               });
             },
             onLeave: _leaveChat,
+            onOpenNetworkOverview: _openNetworkOverviewFromBottomNav,
+            onOpenRooms: _openRoomsFromBottomNav,
             onOpenSettings: _openSettings,
           );
         }

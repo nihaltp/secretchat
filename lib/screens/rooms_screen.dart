@@ -17,10 +17,11 @@ class RoomsScreen extends StatefulWidget {
     required this.status,
     this.activeRooms = const <ActiveRoomItem>[],
     this.activeRoomKey,
-    required this.onBack,
     required this.onResumeActiveRoom,
     required this.onDisconnectActiveRoom,
-    required this.onOpenSettings,
+    this.onOpenNetworkOverview,
+    this.onOpenRooms,
+    this.onOpenSettings,
     required this.onRefresh,
     required this.onCreateRoom,
     required this.onFindRoomByName,
@@ -35,10 +36,11 @@ class RoomsScreen extends StatefulWidget {
   final List<ActiveRoomItem> activeRooms;
   final String? activeRoomKey;
 
-  final VoidCallback onBack;
   final ValueChanged<String> onResumeActiveRoom;
   final Future<void> Function(String roomKey) onDisconnectActiveRoom;
-  final VoidCallback onOpenSettings;
+  final VoidCallback? onOpenNetworkOverview;
+  final VoidCallback? onOpenRooms;
+  final VoidCallback? onOpenSettings;
   final VoidCallback onRefresh;
   final VoidCallback onCreateRoom;
   final RoomInfo? Function(String roomName) onFindRoomByName;
@@ -187,21 +189,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
   Widget build(BuildContext context) {
     final List<RoomInfo> rooms = _filteredRooms;
     return Scaffold(
-      appBar: AppBar(
-        title: const AppLogoTitle('Rooms'),
-        leading: IconButton(
-          tooltip: 'Back',
-          onPressed: widget.onBack,
-          icon: const Icon(Icons.arrow_back),
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Settings',
-            onPressed: widget.onOpenSettings,
-            icon: const Icon(Icons.settings),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const AppLogoTitle('Rooms')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -367,6 +355,38 @@ class _RoomsScreenState extends State<RoomsScreen> {
                         );
                       },
                     ),
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: Row(
+          children: [
+            Expanded(
+              // Intentionally icon-only: labels are omitted to avoid crowding
+              // on narrow screens while keeping primary navigation accessible.
+              child: FilledButton(
+                key: const Key('bottom_nav_user_button'),
+                onPressed: widget.onOpenNetworkOverview,
+                child: const Icon(Icons.person_outline),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton.tonal(
+                key: const Key('bottom_nav_room_button'),
+                onPressed: widget.onOpenRooms,
+                child: const Icon(Icons.meeting_room),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton.tonal(
+                key: const Key('bottom_nav_settings_button'),
+                onPressed: widget.onOpenSettings,
+                child: const Icon(Icons.settings),
+              ),
             ),
           ],
         ),

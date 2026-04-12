@@ -18,9 +18,9 @@ class NetworkOverviewScreen extends StatelessWidget {
     required this.activeUserChats,
     required this.discoveredRooms,
     required this.networkUsers,
-    required this.onBack,
-    required this.onOpenSettings,
+    this.onOpenNetworkOverview,
     required this.onOpenRooms,
+    this.onOpenSettings,
     required this.onOpenActiveRoom,
     required this.onOpenUserChat,
   });
@@ -32,9 +32,9 @@ class NetworkOverviewScreen extends StatelessWidget {
   final List<ActiveRoomItem> activeUserChats;
   final List<RoomInfo> discoveredRooms;
   final List<NetworkUserInfo> networkUsers;
-  final VoidCallback onBack;
-  final VoidCallback onOpenSettings;
+  final VoidCallback? onOpenNetworkOverview;
   final VoidCallback onOpenRooms;
+  final VoidCallback? onOpenSettings;
   final ValueChanged<ActiveRoomItem> onOpenActiveRoom;
   final ValueChanged<NetworkUserInfo> onOpenUserChat;
 
@@ -61,21 +61,7 @@ class NetworkOverviewScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const AppLogoTitle('Network Overview'),
-        leading: IconButton(
-          tooltip: 'Back',
-          onPressed: onBack,
-          icon: const Icon(Icons.arrow_back),
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Settings',
-            onPressed: onOpenSettings,
-            icon: const Icon(Icons.settings),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const AppLogoTitle('Network Overview')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -83,16 +69,6 @@ class NetworkOverviewScreen extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             isHostNetworkMode ? 'Network Mode: Host' : 'Network Mode: Wi-Fi',
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 52,
-            child: FilledButton.icon(
-              key: const Key('open_rooms_button'),
-              onPressed: onOpenRooms,
-              icon: const Icon(Icons.meeting_room),
-              label: const Text('Open Rooms'),
-            ),
           ),
           if (status != null) ...[
             const SizedBox(height: 10),
@@ -210,6 +186,38 @@ class NetworkOverviewScreen extends StatelessWidget {
               ),
             ),
         ],
+      ),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: Row(
+          children: [
+            Expanded(
+              // Intentionally icon-only: labels are omitted to avoid crowding
+              // on narrow screens while keeping primary navigation accessible.
+              child: FilledButton(
+                key: const Key('bottom_nav_user_button'),
+                onPressed: onOpenNetworkOverview,
+                child: const Icon(Icons.person_outline),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton.tonal(
+                key: const Key('bottom_nav_room_button'),
+                onPressed: onOpenRooms,
+                child: const Icon(Icons.meeting_room),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton.tonal(
+                key: const Key('bottom_nav_settings_button'),
+                onPressed: onOpenSettings,
+                child: const Icon(Icons.settings),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
