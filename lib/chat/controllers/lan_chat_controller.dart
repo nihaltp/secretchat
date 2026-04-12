@@ -73,6 +73,7 @@ class LanChatController extends ChangeNotifier {
   bool _historyLoading = false;
   Timer? _batteryUpdateTimer;
   final Map<String, Timer> _ephemeralMessageTimers = <String, Timer>{};
+  bool _deferAnnouncementsUntilFirstMessage = false;
 
   RawDatagramSocket? _discoveryListener;
   RawDatagramSocket? _alternateDiscoveryListener;
@@ -293,7 +294,13 @@ class LanChatController extends ChangeNotifier {
 
       _serverSocket!.listen(_onClientConnected);
       _startBatteryUpdates();
-      _startAnnouncements();
+      _deferAnnouncementsUntilFirstMessage = shouldDeferDirectChatAnnouncements(
+        chatPort: _chatPort,
+        hidden: hidden,
+      );
+      if (!_deferAnnouncementsUntilFirstMessage) {
+        _startAnnouncements();
+      }
       _addSystemMessage('Room "$roomName" created.');
       _notify();
       return true;
@@ -412,6 +419,10 @@ class LanChatController extends ChangeNotifier {
     }
 
     if (mode == ChatMode.hosting) {
+      if (_deferAnnouncementsUntilFirstMessage) {
+        _deferAnnouncementsUntilFirstMessage = false;
+        await _startAnnouncements();
+      }
       final Map<String, dynamic> packet = _buildHostChatPacket(
         senderId: localUserId!,
         senderName: localUserName!,
@@ -518,6 +529,7 @@ class LanChatController extends ChangeNotifier {
     _joinedRoomHistoryEnabled = false;
     _roomHidden = false;
     _roomHistoryEnabled = false;
+    _deferAnnouncementsUntilFirstMessage = false;
     _roomSecurityType = RoomSecurityType.none;
     _roomSecurityValue = null;
     _hostSecurityType = RoomSecurityType.none;

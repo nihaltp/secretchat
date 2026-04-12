@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../chat/controllers/direct_chat_controller.dart';
 import '../chat/controllers/lan_chat_controller.dart';
+import '../chat/chat_constants.dart';
 import '../chat/models/network_user_info.dart';
 import '../chat/models/room_creation_data.dart';
 import '../chat/models/room_info.dart';
@@ -49,7 +50,6 @@ class AppFlowScreen extends StatefulWidget {
 class _AppFlowScreenState extends State<AppFlowScreen>
     with WidgetsBindingObserver {
   static const String _prefKeyDisplayName = 'user_display_name';
-  static const String _directRoomPrefix = '__direct_chat__';
 
   final LanChatController _discoveryController = LanChatController();
   final Map<String, LanChatController> _roomControllersByKey =
@@ -73,7 +73,7 @@ class _AppFlowScreenState extends State<AppFlowScreen>
   bool get _canAccessRooms => _isWifiConnected || _isHostNetworkMode;
 
   bool _isDirectRoomName(String roomName) {
-    return roomName.trim().toLowerCase().startsWith(_directRoomPrefix);
+    return isDirectChatRoomName(roomName);
   }
 
   String _directPeerToken(String roomName) {
@@ -81,14 +81,16 @@ class _AppFlowScreenState extends State<AppFlowScreen>
     if (!_isDirectRoomName(trimmed)) {
       return '';
     }
-    return trimmed.substring(_directRoomPrefix.length).trim();
+    return trimmed.substring(directChatRoomPrefix.length).trim();
   }
 
   String _directRoomNameForUser(NetworkUserInfo user) {
     final String preferredToken = user.userId.trim();
     final String fallbackToken = user.displayName.trim();
-    final String token = preferredToken.isNotEmpty ? preferredToken : fallbackToken;
-    return '$_directRoomPrefix$token';
+    final String token = preferredToken.isNotEmpty
+        ? preferredToken
+        : fallbackToken;
+    return '$directChatRoomPrefix$token';
   }
 
   String? _directRoomTitle(RoomInfo room, {String? preferredTitle}) {
@@ -116,9 +118,27 @@ class _AppFlowScreenState extends State<AppFlowScreen>
         .toList();
   }
 
+  List<ActiveRoomItem> get _roomsActiveRooms => _overviewActiveRooms;
+
   List<NetworkUserInfo> get _networkUsers {
     final String localId = _discoveryController.localUserId ?? '';
     final Map<String, NetworkUserInfo> usersById = <String, NetworkUserInfo>{};
+    final Set<String> pendingDirectSenderIds = <String>{};
+
+    for (final RoomInfo room in _discoveryController.discoveredRooms) {
+      if (!isDirectChatRoomTargetedToUser(
+        room,
+        localUserId: localId,
+        localUserName: _userName,
+      )) {
+        continue;
+      }
+
+      final String senderId = room.hostUserId.trim().isNotEmpty
+          ? room.hostUserId.trim()
+          : '${room.hostAddress.address}:${room.hostName}';
+      pendingDirectSenderIds.add(senderId.toLowerCase());
+    }
 
     for (final RoomInfo room in _discoveryController.discoveredRooms) {
       final String userId = room.hostUserId.trim().isEmpty
@@ -140,7 +160,10 @@ class _AppFlowScreenState extends State<AppFlowScreen>
         0,
         (int total, ActiveRoomItem active) => total + active.unreadCount,
       );
-      final bool hasPending = directRoomsForUser.isNotEmpty;
+      final bool hasPending =
+          pendingDirectSenderIds.contains(userId.toLowerCase()) &&
+              directRoomsForUser.isEmpty ||
+          pendingCount > 0;
 
       usersById[userId] = NetworkUserInfo(
         userId: userId,
@@ -199,7 +222,8 @@ class _AppFlowScreenState extends State<AppFlowScreen>
         .toSet();
 
     return _discoveryController.visibleRooms.where((RoomInfo room) {
-      return !activeRoomNames.contains(room.roomName.trim().toLowerCase());
+      return !activeRoomNames.contains(room.roomName.trim().toLowerCase()) &&
+          !_isDirectRoomName(room.roomName);
     }).toList();
   }
 
@@ -521,8 +545,8 @@ class _AppFlowScreenState extends State<AppFlowScreen>
 
     final List<ConnectivityResult> results = await _connectivity
         .checkConnectivity();
-    await _syncNetworkPresence();
     _applyConnectivity(results);
+    await _syncNetworkPresence();
   }
 
   void _openRoomsFromOverview() {
@@ -539,10 +563,13 @@ class _AppFlowScreenState extends State<AppFlowScreen>
     }
 
     final String intendedRoomName = _directRoomNameForUser(user);
-    final String hostedRoomKey = 'host:${intendedRoomName.trim().toLowerCase()}';
+    final String hostedRoomKey =
+        'host:${intendedRoomName.trim().toLowerCase()}';
 
-    final LanChatController? localDirectController = _roomControllersByKey[hostedRoomKey];
-    if (localDirectController != null && localDirectController.mode != ChatMode.idle) {
+    final LanChatController? localDirectController =
+        _roomControllersByKey[hostedRoomKey];
+    if (localDirectController != null &&
+        localDirectController.mode != ChatMode.idle) {
       setState(() {
         _roomTitleByKey[hostedRoomKey] = user.displayName;
         _openRoom(hostedRoomKey);
@@ -555,7 +582,7 @@ class _AppFlowScreenState extends State<AppFlowScreen>
       if (!room.hidden) {
         continue;
       }
-      if (!room.roomName.trim().toLowerCase().startsWith(_directRoomPrefix)) {
+      if (!_isDirectRoomName(room.roomName)) {
         continue;
       }
       if (room.hostUserId != user.userId && room.hostName != user.displayName) {
@@ -595,7 +622,9 @@ class _AppFlowScreenState extends State<AppFlowScreen>
       _listenOnLeaveByRoomKey[hostedRoomKey] = _defaultListenOnLeave();
       _openRoom(hostedRoomKey);
     });
-    _showSnack('Direct chat started. Messages will sync when ${user.displayName} joins.');
+    _showSnack(
+      'Direct chat started. Messages will sync when ${user.displayName} joins.',
+    );
   }
 
   Future<void> _createRoom() async {
@@ -714,9 +743,11 @@ class _AppFlowScreenState extends State<AppFlowScreen>
   Future<void> _leaveChat() async {
     final String? roomKey = _activeRoomKey;
     final LanChatController? controller = _activeRoomController;
+    final bool isDirectChat =
+        controller != null && _isDirectRoomName(controller.roomName ?? '');
     if (roomKey == null || controller == null) {
       setState(() {
-        _stage = AppStage.rooms;
+        _stage = isDirectChat ? AppStage.networkOverview : AppStage.rooms;
       });
       return;
     }
@@ -726,7 +757,7 @@ class _AppFlowScreenState extends State<AppFlowScreen>
         return;
       }
       setState(() {
-        _stage = AppStage.rooms;
+        _stage = isDirectChat ? AppStage.networkOverview : AppStage.rooms;
       });
       _showSnack('Listening in background. Open room again to resume chat.');
       return;
@@ -737,7 +768,7 @@ class _AppFlowScreenState extends State<AppFlowScreen>
       return;
     }
     setState(() {
-      _stage = AppStage.rooms;
+      _stage = isDirectChat ? AppStage.networkOverview : AppStage.rooms;
     });
   }
 
@@ -847,7 +878,7 @@ class _AppFlowScreenState extends State<AppFlowScreen>
           isHostNetworkMode: _isHostNetworkMode,
           canAccessRooms: _canAccessRooms,
           status: _discoveryController.status,
-          activeRooms: _activeRooms,
+          activeRooms: _roomsActiveRooms,
           activeRoomKey: _activeRoomKey,
           onBack: () {
             setState(() {
@@ -866,8 +897,15 @@ class _AppFlowScreenState extends State<AppFlowScreen>
           onOpenSettings: _openSettings,
           onRefresh: _discoveryController.startDiscovery,
           onCreateRoom: _createRoom,
-          onFindRoomByName: (String name) =>
-              _discoveryController.findRoomByName(name, includeHidden: true),
+          onFindRoomByName: (String name) {
+            if (_isDirectRoomName(name)) {
+              return null;
+            }
+            return _discoveryController.findRoomByName(
+              name,
+              includeHidden: true,
+            );
+          },
           onJoinRoom: (RoomInfo room, String? securityValue) =>
               _joinRoom(room, securityValue),
         );
@@ -881,7 +919,7 @@ class _AppFlowScreenState extends State<AppFlowScreen>
             isHostNetworkMode: _isHostNetworkMode,
             canAccessRooms: _canAccessRooms,
             status: _discoveryController.status,
-            activeRooms: _activeRooms,
+            activeRooms: _roomsActiveRooms,
             activeRoomKey: _activeRoomKey,
             onBack: () {
               setState(() {
@@ -900,8 +938,15 @@ class _AppFlowScreenState extends State<AppFlowScreen>
             onOpenSettings: _openSettings,
             onRefresh: _discoveryController.startDiscovery,
             onCreateRoom: _createRoom,
-            onFindRoomByName: (String name) =>
-                _discoveryController.findRoomByName(name, includeHidden: true),
+            onFindRoomByName: (String name) {
+              if (_isDirectRoomName(name)) {
+                return null;
+              }
+              return _discoveryController.findRoomByName(
+                name,
+                includeHidden: true,
+              );
+            },
             onJoinRoom: (RoomInfo room, String? securityValue) =>
                 _joinRoom(room, securityValue),
           );
