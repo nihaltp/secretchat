@@ -7,6 +7,7 @@ import 'package:secret_chat/security/app_lock_controller.dart';
 import 'package:secret_chat/settings/default_room_listening_controller.dart';
 import 'package:secret_chat/settings/network_privacy_controller.dart';
 import 'package:secret_chat/settings/theme_controller.dart';
+import 'package:secret_chat/widgets/app_bottom_nav.dart';
 import 'package:secret_chat/widgets/app_logo_title.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -132,39 +133,12 @@ class SettingsScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      bottomNavigationBar: SafeArea(
-                        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              // Intentionally icon-only: labels are omitted to avoid crowding
-                              // on narrow screens while keeping primary navigation accessible.
-                              child: FilledButton(
-                                key: const Key('bottom_nav_user_button'),
-                                onPressed: onOpenNetworkOverview == null
-                                    ? null
-                                    : openUsers,
-                                child: const Icon(Icons.person_outline),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: FilledButton.tonal(
-                                key: const Key('bottom_nav_room_button'),
-                                onPressed: onOpenRooms == null ? null : openRooms,
-                                child: const Icon(Icons.meeting_room),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: FilledButton.tonal(
-                                key: const Key('bottom_nav_settings_button'),
-                                onPressed: openSettings,
-                                child: const Icon(Icons.settings),
-                              ),
-                            ),
-                          ],
-                        ),
+                      bottomNavigationBar: AppBottomNav(
+                        onOpenUsers: onOpenNetworkOverview == null
+                            ? null
+                            : openUsers,
+                        onOpenRooms: onOpenRooms == null ? null : openRooms,
+                        onOpenSettings: openSettings,
                       ),
                     );
                   },

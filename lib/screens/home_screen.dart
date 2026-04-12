@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:secret_chat/widgets/app_bottom_nav.dart';
 import 'package:secret_chat/widgets/app_logo_title.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -138,37 +139,10 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
       ),
-      bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: Row(
-          children: [
-            Expanded(
-              // Intentionally icon-only: labels are omitted to avoid crowding
-              // on narrow screens while keeping primary navigation accessible.
-              child: FilledButton(
-                key: const Key('bottom_nav_user_button'),
-                onPressed: widget.onOpenNetworkOverview,
-                child: const Icon(Icons.person_outline),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: FilledButton.tonal(
-                key: const Key('bottom_nav_room_button'),
-                onPressed: widget.onOpenRooms,
-                child: const Icon(Icons.meeting_room),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: FilledButton.tonal(
-                key: const Key('bottom_nav_settings_button'),
-                onPressed: widget.onOpenSettings,
-                child: const Icon(Icons.settings),
-              ),
-            ),
-          ],
-        ),
+      bottomNavigationBar: AppBottomNav(
+        onOpenUsers: widget.onOpenNetworkOverview,
+        onOpenRooms: widget.onOpenRooms,
+        onOpenSettings: widget.onOpenSettings,
       ),
     );
   }
