@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+
+## v1.2.1 - 2026-04-15
+
+- Fixed message delivery between devices with different message padding settings (chunk size mismatch).
+- Added cross-device tests for mismatched padding in both user and room chat.
+- Improved failover test reliability (host readiness wait).
+- All tests and analyzer clean for release.
+
 ## v1.2.0 - 2026-04-14
 
 - Added Signal-style direct-chat E2EE foundation:

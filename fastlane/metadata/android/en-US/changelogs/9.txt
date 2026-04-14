@@ -1,0 +1,5 @@
+v1.2.1 - Padding Compatibility & Test Reliability
+• Fixed message delivery between devices with different message padding settings (chunk size mismatch).
+• Added cross-device tests for mismatched padding in both user and room chat.
+• Improved failover test reliability (host readiness wait).
+• All tests and analyzer clean for release.
