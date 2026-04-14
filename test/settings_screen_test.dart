@@ -47,7 +47,7 @@ void main() {
       version: appVersion,
       buildNumber: buildNumber,
       buildSignature: '',
-      installerStore: null,
+      installerStore: 'org.fdroid.fdroid',
     );
 
     final ThemeController controller = ThemeController();
@@ -99,7 +99,7 @@ void main() {
     expect(find.byKey(const Key('settings_version_footer')), findsOneWidget);
     expect(
       find.text(
-        'Protocol v$chatProtocolVersion  |  App v$expectedVersion',
+        'Protocol v$chatProtocolVersion  |  App v$expectedVersion  |  Channel fdroid',
       ),
       findsOneWidget,
     );

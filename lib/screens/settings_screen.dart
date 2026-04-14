@@ -32,9 +32,26 @@ class SettingsScreen extends StatelessWidget {
   final VoidCallback? onOpenRooms;
   final VoidCallback? onOpenSettings;
 
-  Future<String> _appVersionLabel() async {
+  static const String _releaseChannel = String.fromEnvironment(
+    'RELEASE_CHANNEL',
+    defaultValue: 'unknown',
+  );
+
+  Future<({String appVersion, String channel})> _footerMetadata() async {
     final PackageInfo info = await PackageInfo.fromPlatform();
-    return '${info.version}+${info.buildNumber}';
+    final String installerStore = (info.installerStore ?? '').toLowerCase();
+    final String fallbackChannel = installerStore.contains('fdroid')
+        ? 'fdroid'
+        : installerStore.contains('vending')
+        ? 'playstore'
+        : 'unknown';
+    final String effectiveChannel = _releaseChannel == 'unknown'
+        ? fallbackChannel
+        : _releaseChannel;
+    return (
+      appVersion: '${info.version}+${info.buildNumber}',
+      channel: effectiveChannel,
+    );
   }
 
   @override
@@ -155,20 +172,22 @@ class SettingsScreen extends StatelessWidget {
                                     .textTheme
                                     .bodySmall!
                                     .copyWith(color: Colors.grey.shade600),
-                                child: FutureBuilder<String>(
-                                  future: _appVersionLabel(),
+                                child: FutureBuilder<({String appVersion, String channel})>(
+                                  future: _footerMetadata(),
                                   builder: (
                                     BuildContext context,
-                                    AsyncSnapshot<String> snapshot,
+                                    AsyncSnapshot<({String appVersion, String channel})> snapshot,
                                   ) {
-                                    final String appVersion = snapshot.data ??
-                                        'loading...';
+                                    final String appVersion =
+                                        snapshot.data?.appVersion ?? 'loading...';
+                                    final String channel =
+                                        snapshot.data?.channel ?? 'loading...';
                                     return Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: [
                                         Text(
-                                          'Protocol v$chatProtocolVersion  |  App v$appVersion',
+                                          'Protocol v$chatProtocolVersion  |  App v$appVersion  |  Channel $channel',
                                           key: const Key('settings_version_footer'),
                                         ),
                                       ],
