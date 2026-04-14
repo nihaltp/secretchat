@@ -69,6 +69,7 @@ class _AppFlowScreenState extends State<AppFlowScreen>
   bool _hasChosenNetworkMode = false;
   bool _lockOverlayVisible = false;
   String? _activeRoomKey;
+  bool _refreshScheduled = false;
 
   bool get _canAccessRooms =>
       _hasChosenNetworkMode && (_isWifiConnected || _isHostNetworkMode);
@@ -284,15 +285,28 @@ class _AppFlowScreenState extends State<AppFlowScreen>
     widget.defaultRoomListeningController.addListener(_onControllersChanged);
     widget.networkPrivacyController.addListener(_onControllersChanged);
     _discoveryController.addListener(_onControllersChanged);
-    widget.appLockController.init().then((_) => _enforceAppLock());
-    widget.defaultRoomListeningController.init();
-    widget.networkPrivacyController.init();
-    _loadDisplayName();
-    unawaited(_discoveryController.ensureLocalUserId());
-    _initConnectivity();
     _discoveryController.setStatus(
       'Choose Host Network or Use Wi-Fi to continue.',
     );
+
+    // Defer plugin and storage initialization until after the first frame.
+    // This reduces first-frame contention on slower devices in debug mode.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_runDeferredStartupTasks());
+    });
+  }
+
+  Future<void> _runDeferredStartupTasks() async {
+    await widget.appLockController.init();
+    if (!mounted) {
+      return;
+    }
+    unawaited(_enforceAppLock());
+    await widget.defaultRoomListeningController.init();
+    await widget.networkPrivacyController.init();
+    unawaited(_loadDisplayName());
+    unawaited(_discoveryController.ensureLocalUserId());
+    unawaited(_initConnectivity());
   }
 
   @override
@@ -357,9 +371,7 @@ class _AppFlowScreenState extends State<AppFlowScreen>
 
     if (controller.mode == ChatMode.idle) {
       _scheduleRoomDisposal(roomKey);
-      if (mounted) {
-        setState(() {});
-      }
+      _scheduleUiRefresh();
       return;
     }
 
@@ -377,9 +389,7 @@ class _AppFlowScreenState extends State<AppFlowScreen>
     }
     _lastIncomingCountByKey[roomKey] = currentIncoming;
 
-    if (mounted) {
-      setState(() {});
-    }
+    _scheduleUiRefresh();
   }
 
   Future<void> _syncNetworkPresence() async {
@@ -414,9 +424,7 @@ class _AppFlowScreenState extends State<AppFlowScreen>
     Future<void>.microtask(() {
       _pendingDisposeRoomKeys.remove(roomKey);
       _disposeRoomController(roomKey);
-      if (mounted) {
-        setState(() {});
-      }
+      _scheduleUiRefresh();
     });
   }
 
@@ -441,15 +449,26 @@ class _AppFlowScreenState extends State<AppFlowScreen>
   }
 
   void _onAppLockChanged() {
-    if (mounted) {
-      setState(() {});
-    }
+    _scheduleUiRefresh();
   }
 
   void _onControllersChanged() {
-    if (mounted) {
-      setState(() {});
+    _scheduleUiRefresh();
+  }
+
+  void _scheduleUiRefresh() {
+    if (!mounted || _refreshScheduled) {
+      return;
     }
+
+    _refreshScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshScheduled = false;
+      if (!mounted) {
+        return;
+      }
+      setState(() {});
+    });
   }
 
   @override
@@ -496,17 +515,23 @@ class _AppFlowScreenState extends State<AppFlowScreen>
     final bool connected =
         results.contains(ConnectivityResult.wifi) ||
         results.contains(ConnectivityResult.ethernet);
+    final bool wasConnected = _isWifiConnected;
 
     if (!mounted) {
       return;
     }
 
-    setState(() {
-      _isWifiConnected = connected;
-    });
+    if (connected != wasConnected) {
+      setState(() {
+        _isWifiConnected = connected;
+      });
+    }
 
     if (connected) {
-      _discoveryController.startDiscovery();
+      // Avoid repeatedly restarting discovery sockets on duplicate connectivity events.
+      if (!wasConnected) {
+        unawaited(_discoveryController.startDiscovery());
+      }
       if (!_isHostNetworkMode) {
         _discoveryController.setStatus(
           'Connected to Wi-Fi. You can create or join rooms.',

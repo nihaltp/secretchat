@@ -42,6 +42,26 @@ A local area network (LAN) messaging application that allows you to chat with fr
 - **Device Lock** - Optional app-level biometric or screen lock
 - **Room Security** - Password, PIN, or pattern protection for individual rooms
 - **Hidden Rooms** - Create private rooms not visible in room lists
+- **Signal-Style E2EE Service** - `SignalEncryptionService` provides an in-memory X3DH + Double Ratchet implementation using AES-256-GCM per message on direct chat port `48653`
+
+### End-to-End Encryption Service
+
+The project includes `lib/security/signal_encryption_service.dart` for direct-chat encryption.
+
+Highlights:
+
+- Ed25519 identity keys are generated in memory and used to sign pre-keys.
+- X25519 signed pre-key + optional one-time pre-key are used for the initial X3DH-style handshake.
+- Double Ratchet chain keys derive a fresh AES-256-GCM message key for every message.
+- Session state and key material are volatile-only and can be explicitly wiped via `clearSession`, `clearAllSessions`, and `endSession`.
+
+Typical usage flow:
+
+1. Call `initialize(localUserId: ...)`.
+2. Exchange bundles via `exportPreKeyBundle()` and `registerPeerBundle(...)`.
+3. Encrypt with `encryptMessage(plainText, recipientId)` before sending over direct chat.
+4. Decrypt with `decryptMessage(cipherText, senderId)` on receive.
+5. Wipe cryptographic state with `endSession()` when the direct chat ends.
 
 ## 🛠️ Building from Source
 
@@ -91,6 +111,7 @@ flutter build apk --release --split-per-abi
 - `connectivity_plus` - Network state detection
 - `local_auth` - Biometric authentication
 - `shared_preferences` - Local settings storage
+- `cryptography` - Ed25519/X25519, HKDF, and AES-256-GCM primitives
 
 ## 🧪 Testing
 
