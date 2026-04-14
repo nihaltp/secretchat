@@ -32,6 +32,8 @@ class LanChatController extends ChangeNotifier {
        _chatPort = chatPortOverride ?? roomChatPort,
        _discoveryPort = discoveryPortOverride ?? roomDiscoveryPort;
   static const int _historyPageSize = 25;
+  static const int _protocolVersion = 2;
+  static const String _signalCryptoCapability = 'signal-e2ee-v1';
   static const String _prefKeyLocalUserId = 'secret_chat_local_user_id';
 
   final List<ChatMessage> messages = <ChatMessage>[];
@@ -425,6 +427,7 @@ class LanChatController extends ChangeNotifier {
         'securityValue': normalizedSecurityValue,
         'batteryLevel': await _readBatteryLevel(),
         'eventTimestamp': DateTime.now().toIso8601String(),
+        ..._protocolHandshakeMetadata(),
         if (_isDirectChatMode)
           'e2eeBundle': _exportDirectE2eeBundlePacket(),
       });
@@ -944,6 +947,7 @@ class LanChatController extends ChangeNotifier {
         // Host-authoritative admission: explicitly acknowledge successful join.
         _sendLine(peer.socket, <String, dynamic>{
           'type': 'joinAccepted',
+          ..._protocolHandshakeMetadata(),
           if (_isDirectChatMode)
             'e2eeBundle': _exportDirectE2eeBundlePacket(),
         });
@@ -2096,6 +2100,15 @@ class LanChatController extends ChangeNotifier {
           ? null
           : base64Url.encode(bundle.oneTimePreKey!.bytes),
       'oneTimePreKeyId': bundle.oneTimePreKeyId,
+    };
+  }
+
+  Map<String, dynamic> _protocolHandshakeMetadata() {
+    return <String, dynamic>{
+      'protocolVersion': _protocolVersion,
+      'cryptoCapabilities': _isDirectChatMode
+          ? const <String>[_signalCryptoCapability]
+          : const <String>[],
     };
   }
 
