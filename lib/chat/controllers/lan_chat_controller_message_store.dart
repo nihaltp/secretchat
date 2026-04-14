@@ -9,7 +9,12 @@ extension on LanChatController {
   /// For messages sent by the local user, tracks them in _localSentEntries
   /// for sender-owned history replay.
   void _appendChatFromPacket(Map<String, dynamic> packet) {
-    final String text = (packet['text'] ?? '').toString().trim();
+    String text = (packet['text'] ?? '').toString();
+    final int nullIndex = text.indexOf('\u0000');
+    if (nullIndex != -1) {
+      text = text.substring(0, nullIndex);
+    }
+    text = text.trim();
     if (text.isEmpty) {
       return;
     }

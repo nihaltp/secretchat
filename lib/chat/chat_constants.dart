@@ -9,6 +9,9 @@ const int userDiscoveryPort = 48652;
 const int userChatPort = 48653;
 const int chatProtocolVersion = 2;
 
+// The default message length limit(characters) for chat messages.
+const int messageLengthLimit = 64;
+
 const String directChatRoomPrefix = '__direct_chat__';
 
 bool isDirectChatRoomName(String roomName) {

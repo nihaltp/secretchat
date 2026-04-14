@@ -19,6 +19,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 part 'lan_chat_controller_history_sync.dart';
 part 'lan_chat_controller_message_store.dart';
 part 'lan_chat_controller_network.dart';
+part 'lan_chat_controller_padding.dart';
 part 'lan_chat_controller_types.dart';
 
 class LanChatController extends ChangeNotifier {
@@ -427,8 +428,7 @@ class LanChatController extends ChangeNotifier {
         'batteryLevel': await _readBatteryLevel(),
         'eventTimestamp': DateTime.now().toIso8601String(),
         ..._protocolHandshakeMetadata(),
-        if (_isDirectChatMode)
-          'e2eeBundle': _exportDirectE2eeBundlePacket(),
+        if (_isDirectChatMode) 'e2eeBundle': _exportDirectE2eeBundlePacket(),
       });
 
       socket
@@ -481,6 +481,13 @@ class LanChatController extends ChangeNotifier {
       return;
     }
 
+    final List<String> paddedChunks = _chunkAndPadMessage(trimmed);
+    for (final String chunk in paddedChunks) {
+      await _sendSingleMessage(chunk);
+    }
+  }
+
+  Future<void> _sendSingleMessage(String textToSend) async {
     if (mode == ChatMode.hosting) {
       if (_deferAnnouncementsUntilFirstMessage) {
         _deferAnnouncementsUntilFirstMessage = false;
@@ -489,7 +496,7 @@ class LanChatController extends ChangeNotifier {
       final Map<String, dynamic> packet = _buildHostChatPacket(
         senderId: localUserId!,
         senderName: localUserName!,
-        text: trimmed,
+        text: textToSend,
       );
       _appendChatFromPacket(packet);
       if (_isDirectChatMode) {
@@ -499,7 +506,7 @@ class LanChatController extends ChangeNotifier {
             continue;
           }
           final String? encrypted = await _encryptOutgoingTextForPeer(
-            text: trimmed,
+            text: textToSend,
             peerId: peerUserId,
           );
           if (encrypted == null) {
@@ -529,7 +536,7 @@ class LanChatController extends ChangeNotifier {
         }
 
         final String? encrypted = await _encryptOutgoingTextForPeer(
-          text: trimmed,
+          text: textToSend,
           peerId: peerId,
         );
         if (encrypted == null) {
@@ -547,7 +554,7 @@ class LanChatController extends ChangeNotifier {
 
       _sendLine(_serverConnection!, <String, dynamic>{
         'type': 'chat',
-        'text': trimmed,
+        'text': textToSend,
       });
     }
   }
@@ -947,8 +954,7 @@ class LanChatController extends ChangeNotifier {
         _sendLine(peer.socket, <String, dynamic>{
           'type': 'joinAccepted',
           ..._protocolHandshakeMetadata(),
-          if (_isDirectChatMode)
-            'e2eeBundle': _exportDirectE2eeBundlePacket(),
+          if (_isDirectChatMode) 'e2eeBundle': _exportDirectE2eeBundlePacket(),
         });
         _broadcastParticipants();
         final DateTime systemEventTime = DateTime.now();
@@ -1269,8 +1275,8 @@ class LanChatController extends ChangeNotifier {
       }
       if (type == 'joinAccepted') {
         if (_isDirectChatMode) {
-          final String peerId = _directChatPeerId ??
-              (decoded['hostUserId'] ?? '').toString();
+          final String peerId =
+              _directChatPeerId ?? (decoded['hostUserId'] ?? '').toString();
           if (peerId.trim().isNotEmpty) {
             _directChatPeerId = peerId;
             _tryRegisterPeerBundleFromPacket(
@@ -2130,7 +2136,9 @@ class LanChatController extends ChangeNotifier {
           .toString();
       final String signatureB64 = (rawBundle['signedPreKeySignature'] ?? '')
           .toString();
-      if (identityB64.isEmpty || signedPreKeyB64.isEmpty || signatureB64.isEmpty) {
+      if (identityB64.isEmpty ||
+          signedPreKeyB64.isEmpty ||
+          signatureB64.isEmpty) {
         return;
       }
 
@@ -2181,7 +2189,10 @@ class LanChatController extends ChangeNotifier {
 
     try {
       await _initializeDirectE2eeIfNeeded();
-      return await _signalEncryptionService.encryptMessage(text, normalizedPeer);
+      return await _signalEncryptionService.encryptMessage(
+        text,
+        normalizedPeer,
+      );
     } catch (e) {
       status = 'E2EE send failed: $e';
       _notify();
@@ -2193,29 +2204,38 @@ class LanChatController extends ChangeNotifier {
     required Map<String, dynamic> packet,
     required String peerId,
   }) async {
-    final String rawText = (packet['text'] ?? '').toString();
-    if (rawText.trim().isEmpty) {
+    String resolvedText = (packet['text'] ?? '').toString();
+
+    if (_isDirectChatMode && packet['encrypted'] == true) {
+      final String normalizedPeer = peerId.trim();
+      if (normalizedPeer.isEmpty) {
+        status = 'E2EE receive failed: missing sender identity.';
+        _notify();
+        return null;
+      }
+
+      try {
+        await _initializeDirectE2eeIfNeeded();
+        resolvedText = await _signalEncryptionService.decryptMessage(
+          resolvedText,
+          normalizedPeer,
+        );
+      } catch (e) {
+        status = 'E2EE receive failed: $e';
+        _notify();
+        return null;
+      }
+    }
+
+    final int nullIndex = resolvedText.indexOf('\u0000');
+    if (nullIndex != -1) {
+      resolvedText = resolvedText.substring(0, nullIndex);
+    }
+
+    if (resolvedText.trim().isEmpty) {
       return null;
     }
 
-    if (!_isDirectChatMode || packet['encrypted'] != true) {
-      return rawText;
-    }
-
-    final String normalizedPeer = peerId.trim();
-    if (normalizedPeer.isEmpty) {
-      status = 'E2EE receive failed: missing sender identity.';
-      _notify();
-      return null;
-    }
-
-    try {
-      await _initializeDirectE2eeIfNeeded();
-      return await _signalEncryptionService.decryptMessage(rawText, normalizedPeer);
-    } catch (e) {
-      status = 'E2EE receive failed: $e';
-      _notify();
-      return null;
-    }
+    return resolvedText;
   }
 }
