@@ -1,4 +1,4 @@
-Secret Chat v2.0.0 (2026-06-10)
+Secret Chat v2.0.0 (2026-06-11)
 
 Commits included in this release:
 - cabb851  chore: add fastlane
