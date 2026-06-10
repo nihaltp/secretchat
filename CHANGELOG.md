@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.0.0] - 2026-06-10
+
+### Maintenance
+
+- cabb851  chore: add fastlane
+
+### Other
+
+- 89d8b9a  change app name to secretchat
+
+# Changelog
+
 All notable changes to this project will be documented in this file.
 
 
